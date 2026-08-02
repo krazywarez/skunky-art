@@ -27,7 +27,7 @@ workflow does from the git tag, add `-X main.version=<version>` to the ldflags.
 Prebuilt multi-arch images (`linux/amd64`, `linux/arm64`) are published to GHCR
 on every release tag:
 
-`docker pull ghcr.io/zerolabsco/skunky-art:latest`
+`docker pull ghcr.io/krazywarez/skunky-art:latest`
 
 Each release is tagged `1.3.3`, `1.3`, `1` and `latest`; pin an exact version if
 you want reproducible upgrades. `compose.example.yaml` uses this image by

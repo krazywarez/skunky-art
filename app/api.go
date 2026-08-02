@@ -6,7 +6,7 @@ import (
 	"strconv"
 	"strings"
 
-	"github.com/zerolabsco/devianter"
+	"github.com/krazywarez/devianter"
 )
 
 // API serves the JSON endpoints under /api, backed by the request its main

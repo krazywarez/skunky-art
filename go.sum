@@ -1,4 +1,4 @@
-github.com/zerolabsco/devianter v0.3.3 h1:GEORYqc0H3th05r7pYKGTR7v2muH0eYWrNaKGAIwSQ4=
-github.com/zerolabsco/devianter v0.3.3/go.mod h1:3su99kASJEhNcJpLMO35Si2qDGTZ3bfKLOK/ymitneM=
+github.com/krazywarez/devianter v0.3.3 h1:GEORYqc0H3th05r7pYKGTR7v2muH0eYWrNaKGAIwSQ4=
+github.com/krazywarez/devianter v0.3.3/go.mod h1:3su99kASJEhNcJpLMO35Si2qDGTZ3bfKLOK/ymitneM=
 golang.org/x/net v0.57.0 h1:K5+3DljvIuDG9/Jv9rvyMywYNFCQ9RSUY6OOTTkT+tE=
 golang.org/x/net v0.57.0/go.mod h1:KpXc8iv+r3XplLAG/f7Jsf9RPszJzdR0f58q9vGOuEU=

@@ -20,7 +20,7 @@ Usage:
 	- [-h|--help]		| returns this message
 Example:
 	./skunkyart -c config.json
-Copyright lost+skunk and zerolabs, X11. https://github.com/zerolabsco/skunky-art/releases/tag/v{{.Version}}`
+Copyright lost+skunk and zerolabs, X11. https://github.com/krazywarez/skunky-art/releases/tag/v{{.Version}}`
 
 	a := os.Args[1:]
 	for n, x := range a {
@@ -175,5 +175,5 @@ func addInstance() {
 		}
 		time.Sleep(500 * time.Millisecond)
 	}
-	exit("Done! Now add the files 'instances.json' and 'INSTANCES.md' to the 'main' branch in the repository https://github.com/zerolabsco/skunky-art", 0)
+	exit("Done! Now add the files 'instances.json' and 'INSTANCES.md' to the 'main' branch in the repository https://github.com/krazywarez/skunky-art", 0)
 }

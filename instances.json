@@ -1,11 +1,11 @@
 {
     "instances": [
         {
-            "title": "zerolabs.sh",
+            "title": "krz.sh",
             "country": "United States",
             "urls": {
                 "tor": "http://mplqs2jxkjd5wxak3zjv55oxyadf4vwzx6ksgj4ztftndjl6elgsf4qd.onion",
-                "clearnet": "https://art.zerolabs.sh"
+                "clearnet": "https://art.krz.sh"
             },
             "settings": {
                 "proxy": true,

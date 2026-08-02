@@ -5,7 +5,7 @@ import (
 	"skunkyart/static"
 	"time"
 
-	"github.com/zerolabsco/devianter"
+	"github.com/krazywarez/devianter"
 )
 
 // version is the release this binary was built from. The release workflow links

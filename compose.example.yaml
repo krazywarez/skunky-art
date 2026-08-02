@@ -4,7 +4,7 @@ services:
     restart: unless-stopped
     # Published multi-arch image (linux/amd64, linux/arm64). Pin a release tag
     # (e.g. :1.3.3) instead of :latest if you want reproducible upgrades.
-    image: ghcr.io/zerolabsco/skunky-art:latest
+    image: ghcr.io/krazywarez/skunky-art:latest
     # To build from this checkout instead, comment out `image:` above and
     # uncomment the line below, then `docker compose up -d --build`.
     #build: .

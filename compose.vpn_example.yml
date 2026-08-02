@@ -51,7 +51,7 @@ services:
     # Published multi-arch image; pin a release tag (e.g. :1.3.3) for
     # reproducible upgrades. To build from this checkout instead, comment out
     # `image:` and uncomment `build:`, then `docker compose up -d --build`.
-    image: ghcr.io/zerolabsco/skunky-art:latest
+    image: ghcr.io/krazywarez/skunky-art:latest
     #build: .
     ports:
       - "127.0.0.1:3003:3003"

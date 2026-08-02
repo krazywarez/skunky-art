@@ -14,7 +14,7 @@ import (
 	"text/template"
 	"time"
 
-	"github.com/zerolabsco/devianter"
+	"github.com/krazywarez/devianter"
 	"golang.org/x/net/html"
 )
 
@@ -61,7 +61,7 @@ func RefreshInstances() {
 	for {
 		func() {
 			defer restore()
-			instances = Download("https://raw.githubusercontent.com/zerolabsco/skunky-art/main/instances.json").Body
+			instances = Download("https://raw.githubusercontent.com/krazywarez/skunky-art/main/instances.json").Body
 			try(json.Unmarshal(instances, &About))
 		}()
 		time.Sleep(1 * time.Hour)

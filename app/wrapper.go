@@ -6,7 +6,7 @@ import (
 	"strings"
 	"time"
 
-	"github.com/zerolabsco/devianter"
+	"github.com/krazywarez/devianter"
 	"golang.org/x/net/html"
 )
 

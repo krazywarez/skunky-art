@@ -8,7 +8,7 @@ import (
 	"strconv"
 	"time"
 
-	"github.com/zerolabsco/devianter"
+	"github.com/krazywarez/devianter"
 )
 
 // Release carries the build's version and description, set at link time and

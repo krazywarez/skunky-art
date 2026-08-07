@@ -2,8 +2,11 @@ package app
 
 import (
 	"bytes"
+	"encoding/base64"
+	"encoding/json"
 	"net/http/httptest"
 	"net/url"
+	"strings"
 	"sync"
 	"testing"
 )
@@ -43,6 +46,80 @@ func TestBuildMediaURLRejectsForgedSubdomain(t *testing.T) {
 		if got, ok := buildMediaURL(subdomain, "f/x.jpg", ""); ok {
 			t.Errorf("subdomain %q: accepted and built %q, want rejected", subdomain, got)
 		}
+	}
+}
+
+// makeMediaToken builds a JWT-shaped token whose obj carries the given blur
+// value, mirroring the wixmp media tokens DeviantArt signs. Pass a ">=N" string
+// for a blur-constrained (mature) token, or nil for an unconstrained one.
+func makeMediaToken(t *testing.T, blur any) string {
+	t.Helper()
+	claims := map[string]any{
+		"obj": [][]map[string]any{{{"path": "/f/x.png", "blur": blur}}},
+	}
+	payload, err := json.Marshal(claims)
+	if err != nil {
+		t.Fatal(err)
+	}
+	enc := base64.RawURLEncoding.EncodeToString
+	return enc([]byte(`{"alg":"none"}`)) + "." + enc(payload) + ".sig"
+}
+
+// TestBlurConstraint is the regression test for the mature-media 403: a token
+// whose obj demands a blur must yield that radius, and anything else must yield
+// 0 so the transform is left untouched.
+func TestBlurConstraint(t *testing.T) {
+	if got := blurConstraint(makeMediaToken(t, ">=10")); got != 10 {
+		t.Errorf("blur-constrained token: got %d, want 10", got)
+	}
+	if got := blurConstraint(makeMediaToken(t, nil)); got != 0 {
+		t.Errorf("null-blur token: got %d, want 0", got)
+	}
+	// Nothing parseable as a claims payload: fail open, leaving the URL alone.
+	for _, tok := range []string{"", "not-a-jwt", "a.b", "a.!!!.c"} {
+		if got := blurConstraint(tok); got != 0 {
+			t.Errorf("unparseable token %q: got %d, want 0", tok, got)
+		}
+	}
+}
+
+// TestAddBlurToTransform checks the string surgery: a blur op is inserted into a
+// /v1/fit transform, paths without one are untouched, and an existing op is not
+// doubled.
+func TestAddBlurToTransform(t *testing.T) {
+	got := addBlurToTransform("f/u/x.png/v1/fit/w_1280,h_1920/x.png", 10)
+	if want := "f/u/x.png/v1/fit/w_1280,h_1920,blur_10/x.png"; got != want {
+		t.Errorf("got %q, want %q", got, want)
+	}
+	if got := addBlurToTransform("f/u/x.gif", 10); got != "f/u/x.gif" {
+		t.Errorf("path without a transform was modified: %q", got)
+	}
+	blurred := "f/u/x.png/v1/fit/w_1280,h_1920,blur_10/x.png"
+	if got := addBlurToTransform(blurred, 10); got != blurred {
+		t.Errorf("existing blur op was doubled: %q", got)
+	}
+}
+
+// TestBuildMediaURLAddsBlurWhenTokenDemandsIt drives the whole path: a
+// blur-constrained token gains a matching blur op in the composed URL, and an
+// unconstrained one does not.
+func TestBuildMediaURLAddsBlurWhenTokenDemandsIt(t *testing.T) {
+	path := "f/u/x.png/v1/fit/w_1280,h_1920/x.png"
+
+	got, ok := buildMediaURL("ed30a86b", path, makeMediaToken(t, ">=10"))
+	if !ok {
+		t.Fatal("a plain label was rejected, want accepted")
+	}
+	u, err := url.Parse(got)
+	if err != nil {
+		t.Fatalf("built an unparseable URL %q: %v", got, err)
+	}
+	if !strings.Contains(u.Path, "w_1280,h_1920,blur_10") {
+		t.Errorf("transform is %q, want a blur_10 op added", u.Path)
+	}
+
+	if got, _ := buildMediaURL("ed30a86b", path, makeMediaToken(t, nil)); strings.Contains(got, "blur") {
+		t.Errorf("unconstrained media gained a blur op: %q", got)
 	}
 }
 

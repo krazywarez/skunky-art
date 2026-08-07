@@ -46,7 +46,7 @@ func (a API) Error(description string, status int) {
 func (a API) sendMedia(d *devianter.Deviation) {
 	mediaURL, name := devianter.UrlFromMedia(d.Media)
 	a.main.SetFilename(name)
-	if len(mediaURL) != 0 {
+	if len(mediaURL) == 0 {
 		return
 	}
 

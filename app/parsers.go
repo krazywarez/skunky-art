@@ -92,6 +92,9 @@ func (s skunkyart) DeviationList(devs []devianter.Deviation, allowAtom bool, con
 
 	for i, l := 0, len(devs); i < l; i++ {
 		data := &devs[i]
+		if data.AI && CFG.HideAI {
+			continue
+		}
 		if preview, fullview := ParseMedia(s.Host, data.Media, 320), ParseMedia(s.Host, data.Media); !data.NSFW || CFG.Nsfw {
 			if allowAtom && s.Atom {
 				s.Writer.Header().Add("Content-Type", "application/atom+xml")

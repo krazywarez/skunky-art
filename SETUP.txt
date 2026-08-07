@@ -35,6 +35,8 @@ Time units:
   DeviantArt's CDN. Required by `cache`; when off, clients fetch images from
   wixmp directly.
 * `nsfw` — Show mature content.
+* `hide-ai` — Omit AI-generated deviations (those flagged `[🤖]`) from all
+  listings: search, daily deviations, galleries and favourites.
 
 # Setting up reverse proxy
 Pretty much business as usual, except for the [`X-Forwarded-Proto`](https://developer.mozilla.org/en-US/docs/Web/HTTP/Headers/X-Forwarded-Proto) header setting.

@@ -34,6 +34,7 @@ type config struct {
 	Cache         cacheConfig `json:"cache"`
 	Proxy         bool        `json:"proxy"`
 	Nsfw          bool        `json:"nsfw"`
+	HideAI        bool        `json:"hide-ai"`
 	UserAgent     string      `json:"user-agent"`
 	DownloadProxy string      `json:"download-proxy"`
 	StaticPath    string      `json:"static-path"`

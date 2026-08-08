@@ -1,10 +1,10 @@
 <!DOCTYPE html>
-<html>
+<html lang="en">
     {{template "head" . }}
     <main>
         {{template "header" . }}
         <figure>
-            <img src="{{.BasePath}}media/emojitar/{{.Templates.Deviation.Post.Deviation.Author.Username}}?type=a" width="30px">
+            <img src="{{.BasePath}}media/emojitar/{{.Templates.Deviation.Post.Deviation.Author.Username}}?type=a" width="30px" alt="{{.Templates.Deviation.Post.Deviation.Author.Username}} avatar">
             <span><strong><a href="{{.BasePath}}group_user?type=about&q={{.Templates.Deviation.Post.Deviation.Author.Username}}">{{.Templates.Deviation.Post.Deviation.Author.Username}}</a></strong> — {{if (.Templates.Deviation.Post.Deviation.DD)}}
                 <span class="dd" title="Daily Deviation!"><b>{{.Templates.Deviation.Post.Deviation.Title}}</b></span>
                 {{else}}{{.Templates.Deviation.Post.Deviation.Title}}{{end}}
@@ -13,7 +13,7 @@
             </span>
             <br>
             {{if (ne .Templates.Deviation.Post.IMG "")}}
-            <a href="{{.Templates.Deviation.Post.IMG}}" title="open/download image"><img src="{{.Templates.Deviation.Post.IMG}}" width="50%"></a>
+            <a href="{{.Templates.Deviation.Post.IMG}}" title="open/download image"><img src="{{.Templates.Deviation.Post.IMG}}" width="50%" alt="{{.Templates.Deviation.Post.Deviation.Title}}"></a>
             <br>
             {{end}}
             {{if (ne .Templates.Deviation.Tags "")}}

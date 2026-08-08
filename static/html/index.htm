@@ -1,10 +1,10 @@
 <!DOCTYPE html>
-<html>
+<html lang="en">
     <head>
         <title>SkunkyArt</title>
         <link rel="stylesheet" href="{{.}}stylesheet"/>
         <link rel="icon" type="image/x-icon" href="{{.}}favicon.ico">
-        <meta name="viewport" content="width=device-width, height=device-height, initial-scale=0.4, user-scalable=no; user-scalable=0"/>
+        <meta name="viewport" content="width=device-width, height=device-height, initial-scale=0.4"/>
 
         <style>
             main {
@@ -70,12 +70,12 @@
         </style>
     </head>
     <main>
-        <img src="{{.}}favicon.ico" title="SkunkyArt logo" draggable="false">
+        <img src="{{.}}favicon.ico" title="SkunkyArt logo" alt="SkunkyArt logo" draggable="false">
         <div>
             <h1><a href="{{.}}dd">Daily Deviations</a> | <a href="{{.}}about">About</a></h1>
             <form method="get" action="{{.}}search">
-                <input type="text" name="q" placeholder="Search for ..." autocomplete="off" autocapitalize="none" spellcheck="false">
-                <select name="type">
+                <input type="text" name="q" aria-label="Search query" placeholder="Search for ..." autocomplete="off" autocapitalize="none" spellcheck="false">
+                <select name="type" aria-label="Search type">
                     <option value="all">All</option>
                     <option value="tag">Tag</option>
                     <option value="r">Groups</option>

@@ -89,7 +89,7 @@ func (s skunkyart) GRUser() {
 
 		folderid, _ := strconv.Atoi(s.Args.Get("folder"))
 
-		if a := s.Args.Get("all"); a == "true" {
+		if s.Args.Get("all") == "true" {
 			all = true
 		}
 
@@ -115,7 +115,7 @@ func (s skunkyart) GRUser() {
 			})
 		} else {
 			for _, x := range content.Content.Gruser.Page.Modules {
-				if l := len(x.ModuleData.Folders.Results); l != 0 {
+				if len(x.ModuleData.Folders.Results) != 0 {
 					var folders strings.Builder
 					folders.WriteString(`<h1 id="folders"><a href="#folder">#</a> Folders</h1><div class="folders"><br>`)
 					for _, x := range x.ModuleData.Folders.Results {
@@ -309,7 +309,7 @@ func (s skunkyart) Search() {
 			}
 		}
 
-		if l := len(usernames); l != 0 {
+		if len(usernames) != 0 {
 			ss.List += `<div class="content plates">`
 			for x := range len(usernames) {
 				ss.List += BuildUserPlate(s.Host, usernames[x])

@@ -278,7 +278,7 @@ func TestAgeMemCacheEvicts(t *testing.T) {
 	if got := memGet(cold); got != nil {
 		t.Errorf("cold entry survived aging: got %q, want nil", got)
 	}
-	if got := memGet(hot); got == nil {
+	if memGet(hot) == nil {
 		t.Error("hot entry was evicted after a hit, want it kept")
 	}
 }

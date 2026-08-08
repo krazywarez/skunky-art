@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<html>
+<html lang="en">
     {{template "head" . }}
     <main>
         <header>
@@ -17,9 +17,9 @@
                 | <a href="group_user?q={{.Templates.GroupUser.GR.Owner.Username}}&type=gallery&atom=true">RSS</a>
             </h1>
              <form method="get" action="{{.BasePath}}search">
-                <input type="gallery" name="q" placeholder="Search for ..." autocomplete="off" autocapitalize="none" spellcheck="false">
+                <input type="text" name="q" aria-label="Search query" placeholder="Search for ..." autocomplete="off" autocapitalize="none" spellcheck="false">
                 <input type="hidden" name="usr" value="{{.Templates.GroupUser.GR.Owner.Username}}">
-                <select name="type">
+                <select name="type" aria-label="Search type">
                     <option value="gallery">Gallery</option>
                     <option value="folders">Folders</option>
                     <option value="all">All</option>
@@ -31,11 +31,11 @@
         </header>
         {{if eq .Type 'a'}}
             {{if and (and (ne .Templates.About.Nsfw true) (ne .Templates.GroupUser.About.BGMeta.NSFW true)) (ne .Templates.GroupUser.About.BG "")}}
-            <a href="{{.Templates.GroupUser.About.BGMeta.Url}}" class="ubg"><img title="{{if ne .Templates.GroupUser.GR.Owner.Username .Templates.GroupUser.About.BGMeta.Author.Username}}
+            <a href="{{.Templates.GroupUser.About.BGMeta.Url}}" class="ubg"><img alt="Profile background" title="{{if ne .Templates.GroupUser.GR.Owner.Username .Templates.GroupUser.About.BGMeta.Author.Username}}
             {{.Templates.GroupUser.About.BGMeta.Author.Username}} - {{end}}{{.Templates.GroupUser.About.BGMeta.Title}}" src="{{.Templates.GroupUser.About.BG}}"></a>
             {{end}}
 
-            <img src="{{.BasePath}}media/emojitar/{{.Templates.GroupUser.GR.Owner.Username}}?type=a" width="30px" height="30px"> <b>{{.Templates.GroupUser.GR.Owner.Username}}</b>
+            <img src="{{.BasePath}}media/emojitar/{{.Templates.GroupUser.GR.Owner.Username}}?type=a" width="30px" height="30px" alt="{{.Templates.GroupUser.GR.Owner.Username}} avatar"> <b>{{.Templates.GroupUser.GR.Owner.Username}}</b>
             {{if (eq .Templates.GroupUser.About.A.Gender "male")}}
             ♂️
             {{end}}

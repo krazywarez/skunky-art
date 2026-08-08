@@ -2,8 +2,8 @@
 <header>
     <h1><a href="">HOME</a> | <a href="dd">DD</a> {{if eq .Endpoint "dd"}}| <a href="{{.Endpoint}}?atom=true">RSS</a>{{end}}</h1>
     <form method="get" action="search">
-        <input type="text" name="q" placeholder="Search for ..." autocomplete="off" autocapitalize="none" spellcheck="false" value="{{.QueryRaw}}">
-        <select name="type">
+        <input type="text" name="q" aria-label="Search query" placeholder="Search for ..." autocomplete="off" autocapitalize="none" spellcheck="false" value="{{.QueryRaw}}">
+        <select name="type" aria-label="Search type">
             <option value="all">All</option>
             <option value="tag">Tag</option>
             <option value="r">Groups</option>

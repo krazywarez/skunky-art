@@ -134,8 +134,9 @@ func ExecuteConfig() {
 		}
 
 		About = instanceAbout{
-			Proxy: CFG.Proxy,
-			Nsfw:  CFG.Nsfw,
+			Proxy:  CFG.Proxy,
+			Nsfw:   CFG.Nsfw,
+			HideAI: CFG.HideAI,
 		}
 
 		static.StaticPath = CFG.StaticPath

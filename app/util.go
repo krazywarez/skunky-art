@@ -72,6 +72,7 @@ func RefreshInstances() {
 type instanceAbout struct {
 	Proxy     bool       `json:"proxy"`
 	Nsfw      bool       `json:"nsfw"`
+	HideAI    bool       `json:"hide-ai"`
 	Instances []settings `json:"instances"`
 }
 
@@ -337,9 +338,6 @@ type DeviationList struct {
 }
 
 // NavBase renders the page navigation bar for a list.
-//
-// FIXME: on some artworks the first page can make the navigation panel disappear
-// entirely.
 func (s skunkyart) NavBase(c DeviationList) string {
 	var list strings.Builder
 
@@ -379,7 +377,18 @@ func (s skunkyart) NavBase(c DeviationList) string {
 		p = 1
 	}
 
-	for i, x := p-6, 0; (i <= c.Pages && i <= p+6) && x < 12; i++ {
+	// The window runs to the last page or the current one, whichever is further
+	// out. Callers that cannot count pages pass Pages: 0 — the comment list on an
+	// artwork is one — and bounding purely by Pages then ended the loop before
+	// i reached 1, so page one rendered no numbers at all. With nothing before it
+	// to link back to and no further page to link on, the whole panel came out as
+	// a bare <br>.
+	last := c.Pages
+	if p > last {
+		last = p
+	}
+
+	for i, x := p-6, 0; (i <= last && i <= p+6) && x < 12; i++ {
 		if i > 0 {
 			var onPage bool
 			if i == p {

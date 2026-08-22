@@ -20,13 +20,14 @@ type info struct {
 	Settings settingsParams `json:"settings"`
 }
 
-// Info responds with this instance's version and its proxy/NSFW settings.
+// Info responds with this instance's version and its proxy/NSFW/hide-ai settings.
 func (a API) Info() {
 	json, err := json.Marshal(info{
 		Version: a.main.Version,
 		Settings: settingsParams{
-			Nsfw:  CFG.Nsfw,
-			Proxy: CFG.Proxy,
+			Nsfw:   CFG.Nsfw,
+			Proxy:  CFG.Proxy,
+			HideAI: CFG.HideAI,
 		},
 	})
 	try(err)

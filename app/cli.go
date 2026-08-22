@@ -55,8 +55,9 @@ type settingsUrls struct {
 }
 
 type settingsParams struct {
-	Nsfw  bool `json:"nsfw"`
-	Proxy bool `json:"proxy"`
+	Nsfw   bool `json:"nsfw"`
+	Proxy  bool `json:"proxy"`
+	HideAI bool `json:"hide-ai"`
 }
 
 type settings struct {
@@ -112,8 +113,9 @@ func addInstance() {
 				Country:     prompt("Country", true),
 				ModifiedSrc: prompt("Link to modified sources", false),
 				Settings: settingsParams{
-					Nsfw:  CFG.Nsfw,
-					Proxy: CFG.Proxy,
+					Nsfw:   CFG.Nsfw,
+					Proxy:  CFG.Proxy,
+					HideAI: CFG.HideAI,
 				},
 				Urls: settingsUrls{
 					Clearnet: prompt("Clearnet link", false),

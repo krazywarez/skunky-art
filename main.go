@@ -19,7 +19,7 @@ var version = "dev"
 
 func main() {
 	app.Release.Version = version
-	app.Release.Description = "Two API endpoints and template embedding into binary"
+	app.Release.Description = "Themes, a JSON API for search and deviations, and a multilingual interface"
 
 	app.ExecuteCommandLineArguments()
 	app.ExecuteConfig()

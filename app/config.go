@@ -35,6 +35,7 @@ type config struct {
 	Proxy         bool        `json:"proxy"`
 	Nsfw          bool        `json:"nsfw"`
 	HideAI        bool        `json:"hide-ai"`
+	Theme         string      `json:"theme"`
 	UserAgent     string      `json:"user-agent"`
 	DownloadProxy string      `json:"download-proxy"`
 	StaticPath    string      `json:"static-path"`
@@ -45,6 +46,7 @@ type config struct {
 var CFG = config{
 	cfg:    "config.json",
 	Listen: "127.0.0.1:3003",
+	Theme:  "auto",
 	URI:    "/",
 	Cache: cacheConfig{
 		Enabled:        false,
@@ -137,9 +139,34 @@ func ExecuteConfig() {
 			Proxy:  CFG.Proxy,
 			Nsfw:   CFG.Nsfw,
 			HideAI: CFG.HideAI,
+			Theme:  CFG.Theme,
+		}
+
+		// A theme the stylesheet cannot honour would silently fall back to auto,
+		// so say so instead.
+		switch CFG.Theme {
+		case "auto", "dark", "light":
+		default:
+			exit("config: theme must be one of auto, dark, light; got "+CFG.Theme, 1)
 		}
 
 		static.StaticPath = CFG.StaticPath
 		devianter.UserAgent = CFG.UserAgent
 	}
+}
+
+// forcedThemeCSS returns a block that pins the palette when the instance has
+// chosen a theme, or "" for "auto". Light repeats what the prefers-color-scheme
+// block already holds; dark repeats :root. Both are emitted after the
+// stylesheet so they win on order rather than on !important.
+func forcedThemeCSS() string {
+	switch CFG.Theme {
+	case "light":
+		return `
+:root{--bg:#f4f1ee;--fg:#1f2421;--fg-strong:#0d100e;--link:#1c6b78;--link-hover:#5a6b00;--edge:#8fbcae;--edge-strong:#258268;--accent:#4d27d6;--surface:#d9e8e1;--surface-sunken:#e8f0ec;--surface-alt:#e2e4f2;--surface-deep:#dbe7ef;--status-bad:#a11;--status-good:#157a3a;--status-mild:#2e8b57;--status-note:#8a007f}`
+	case "dark":
+		return `
+:root{--bg:black;--fg:rgb(234,216,216);--fg-strong:whitesmoke;--link:cadetblue;--link-hover:#d0ff00;--edge:#164e3e;--edge-strong:#258268;--accent:#4d27d6;--surface:#134134;--surface-sunken:#091f19;--surface-alt:#060820;--surface-deep:#011522;--status-bad:red;--status-good:green;--status-mild:seagreen;--status-note:rgb(160,0,147)}`
+	}
+	return ""
 }

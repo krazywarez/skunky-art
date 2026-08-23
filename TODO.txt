@@ -22,6 +22,6 @@
 ## v1.4
 
 - [ ] Implement an API
-- [ ] Implement themes
+- [x] Implement themes
 - [ ] Switch to arenas in the cache
 - [ ] Implement a multilingual interface

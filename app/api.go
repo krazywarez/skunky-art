@@ -28,6 +28,7 @@ func (a API) Info() {
 			Nsfw:   CFG.Nsfw,
 			Proxy:  CFG.Proxy,
 			HideAI: CFG.HideAI,
+			Theme:  CFG.Theme,
 		},
 	})
 	try(err)

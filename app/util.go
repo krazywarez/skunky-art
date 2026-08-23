@@ -73,6 +73,7 @@ type instanceAbout struct {
 	Proxy     bool       `json:"proxy"`
 	Nsfw      bool       `json:"nsfw"`
 	HideAI    bool       `json:"hide-ai"`
+	Theme     string     `json:"theme"`
 	Instances []settings `json:"instances"`
 }
 

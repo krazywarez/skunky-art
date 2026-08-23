@@ -1,15 +1,66 @@
+/* THEME
+ *
+ * Every colour in this file comes from a variable below, so a theme is a
+ * palette rather than a fork of the stylesheet. The dark palette is the
+ * original SkunkyArt look and stays the default.
+ *
+ * Light is offered through prefers-color-scheme, so a visitor who has asked
+ * their system for light gets it with no cookie, no query string and no
+ * JavaScript — nothing that identifies them. An instance can force one or the
+ * other with "theme" in its config, which appends a block after this file.
+ */
+:root {
+    --bg: black;
+    --fg: rgb(234, 216, 216);
+    --fg-strong: whitesmoke;
+    --link: cadetblue;
+    --link-hover: #d0ff00;
+    --edge: #164e3e;
+    --edge-strong: #258268;
+    --accent: #4d27d6;
+    --surface: #134134;
+    --surface-sunken: #091f19;
+    --surface-alt: #060820;
+    --surface-deep: #011522;
+    --status-bad: red;
+    --status-good: green;
+    --status-mild: seagreen;
+    --status-note: rgb(160, 0, 147);
+}
+
+@media (prefers-color-scheme: light) {
+    :root {
+        --bg: #f4f1ee;
+        --fg: #1f2421;
+        --fg-strong: #0d100e;
+        --link: #1c6b78;
+        --link-hover: #5a6b00;
+        --edge: #8fbcae;
+        --edge-strong: #258268;
+        --accent: #4d27d6;
+        --surface: #d9e8e1;
+        --surface-sunken: #e8f0ec;
+        --surface-alt: #e2e4f2;
+        --surface-deep: #dbe7ef;
+        --status-bad: #a11;
+        --status-good: #157a3a;
+        --status-mild: #2e8b57;
+        --status-note: #8a007f;
+    }
+}
+
 /* TAGS */
 html {
     font-family: ubuntu, system-ui;
-    background-color:black;
-    color: rgb(234, 216, 216);
+    background-color: var(--bg);
+    color: var(--fg);
 }
 a {
     text-decoration: none;
-    color: cadetblue;
+    color: var(--link);
 }
 a:hover {
-    color: #d0ff00;
+    color: var(--link-hover);
     transition: 400ms;
 }
 header h1 {
@@ -23,13 +74,13 @@ header, form {
     display: flex;
 }
 form {
-    border: solid #164e3e 1px;
+    border: solid var(--edge) 1px;
     max-width: fit-content;
 }
 form input, button, select {
-    background-color: #134134;
+    background-color: var(--surface);
     padding: 5px;
-    color: whitesmoke;
+    color: var(--fg-strong);
     border: 0;
 }
 input:focus {
@@ -46,9 +97,9 @@ input:focus {
 }
 .block {
     padding: 0px 0px 6px 0px;
-    border: 3px solid #000;
+    border: 3px solid var(--bg);
     word-break: break-all;
-    background-color: #091f19;
+    background-color: var(--surface-sunken);
     margin-left: 5px;
     margin-top: 5px;
     text-align: center;
@@ -57,7 +108,7 @@ input:focus {
     padding: 8.5vh;
 }
 .block:hover {
-    border: 3px solid #4d27d6;
+    border: 3px solid var(--accent);
     transition: 400ms;
 }
 
@@ -67,8 +118,8 @@ input:focus {
 
 /* MESSAGES */
 .msg {
-    background-color: #091f19;
-    color: whitesmoke;
+    background-color: var(--surface-sunken);
+    color: var(--fg-strong);
     width: fit-content;
     max-width: 90%;
     padding: 4px;
@@ -78,11 +129,11 @@ input:focus {
     transition: 350ms;
 }
 .msg:hover {
-    background-color: #134134;
+    background-color: var(--surface);
 }
 .reply {
     border-radius: 0px 2px 2px 0px;
-    border-left: #258268 solid;
+    border-left: var(--edge-strong) solid;
     margin-left: 40px;
 }
 
@@ -92,18 +143,18 @@ input:focus {
     flex-wrap: wrap;
 }
 .folder-item {
-    background-color: #060820;
-    border: 3px solid #060820;
+    background-color: var(--surface-alt);
+    border: 3px solid var(--surface-alt);
     width: 10%
 }
 .admins .user-plate {
     width: 5%;
-    background-color: #011522;
+    background-color: var(--surface-deep);
 }
 .plates .user-plate {
     margin-left: 1%;
     margin-bottom: 1%;
-    background-color: #091f19;
+    background-color: var(--surface-sunken);
     padding: 3px;
     word-break: break-all;
     text-align: center;
@@ -122,16 +173,16 @@ input:focus {
 
 /* COLORS */
 .nsfw, .about-false {
-    color: red;
+    color: var(--status-bad);
 }
 .about-true {
-    color: green;
+    color: var(--status-good);
 }
 .author {
-    color: seagreen;
+    color: var(--status-mild);
 }
 .dd {
-    color: rgb(160, 0, 147);
+    color: var(--status-note);
 }
 
 /* SCREEN OPTIMISATIONS */
@@ -154,7 +205,7 @@ input:focus {
 
     form {
         font-size: 60%;
-        border: solid #164e3e 5px;
+        border: solid var(--edge) 5px;
     }
     
     .content {

@@ -136,6 +136,13 @@ func Router() {
 		case "stylesheet":
 			w.Header().Add("Content-Type", "text/css")
 			_, _ = w.Write(open("css/skunky.css"))
+			// "auto" is the stylesheet as written: dark, with a light palette
+			// behind prefers-color-scheme. Forcing a theme means re-declaring
+			// that palette unconditionally, which outranks the media query
+			// because it comes later with equal specificity.
+			if css := forcedThemeCSS(); css != "" {
+				_, _ = w.Write([]byte(css))
+			}
 		case "favicon.ico":
 			_, _ = w.Write(open("images/logo.png"))
 

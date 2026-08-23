@@ -56,3 +56,10 @@ server {
     }
 }
 ```
+
+* `theme` — Palette for the interface. `auto` (default) serves the dark theme
+  and lets a visitor whose system asks for light get the light one, through
+  `prefers-color-scheme` — no cookie, no query string, no JavaScript. `dark` or
+  `light` pins one for everybody. An unrecognised value stops startup rather
+  than quietly falling back.
+

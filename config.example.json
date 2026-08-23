@@ -15,5 +15,6 @@
     "proxy": true,
     "nsfw": false,
     "hide-ai": false,
-    "theme": "auto"
+    "theme": "auto",
+    "language": "auto"
 }

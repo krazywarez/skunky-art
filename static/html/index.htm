@@ -70,20 +70,20 @@
         </style>
     </head>
     <main>
-        <img src="{{.}}favicon.ico" title="SkunkyArt logo" alt="SkunkyArt logo" draggable="false">
+        <img src="{{.}}favicon.ico" title="{{T "index.logo"}}" alt="SkunkyArt logo" draggable="false">
         <div>
-            <h1><a href="{{.}}dd">Daily Deviations</a> | <a href="{{.}}about">About</a></h1>
+            <h1><a href="{{.}}dd">{{T "nav.daily"}}</a> | <a href="{{.}}about">{{T "nav.about"}}</a></h1>
             <form method="get" action="{{.}}search">
-                <input type="text" name="q" aria-label="Search query" placeholder="Search for ..." autocomplete="off" autocapitalize="none" spellcheck="false">
+                <input type="text" name="q" aria-label="Search query" placeholder="{{T "search.placeholder"}}" autocomplete="off" autocapitalize="none" spellcheck="false">
                 <select name="type" aria-label="Search type">
-                    <option value="all">All</option>
-                    <option value="tag">Tag</option>
-                    <option value="r">Groups</option>
+                    <option value="all">{{T "search.all"}}</option>
+                    <option value="tag">{{T "search.tag"}}</option>
+                    <option value="r">{{T "search.groups"}}</option>
                 </select>
-                <button type="submit">Search!</button>
+                <button type="submit">{{T "search.submit"}}</button>
             </form>
             <h1 style="margin-top: 5%; font-size: 200%; text-align: center;">
-                <a href="https://github.com/krazywarez/skunky-art" target="_blank" title="Source Code">SkunkyArt</a>
+                <a href="https://github.com/krazywarez/skunky-art" target="_blank" title="{{T "index.source"}}">SkunkyArt</a>
             </h1>
         </div>
     </main>

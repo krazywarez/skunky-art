@@ -86,6 +86,10 @@ type skunkyart struct {
 	Type rune
 	Atom bool
 
+	// Lang is the catalogue chosen for this request, resolved once in the
+	// handler so every template and helper agrees on one answer.
+	Lang string
+
 	// Host is the scheme and host this request arrived on, e.g.
 	// "https://art.example.com". It is per-request rather than global because
 	// concurrent requests can arrive on different hosts and ports.
@@ -144,6 +148,11 @@ type skunkyart struct {
 func (s skunkyart) ExecuteTemplate(file, dir string, data any) {
 	var buf strings.Builder
 	tmp := template.New(file)
+	// T is bound to this request's language, so templates ask for a key and
+	// never have to know which catalogue answered.
+	tmp = tmp.Funcs(template.FuncMap{
+		"T": func(key string) string { return T(s.Lang, key) },
+	})
 	tmp, err := tmp.ParseFS(static.Templates, dir+"/*")
 	if err != nil {
 		s.Writer.WriteHeader(500)

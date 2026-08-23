@@ -86,6 +86,7 @@ func Router() {
 		skunky.API.main = &skunky
 		skunky.Writer = w
 		skunky.BasePath = CFG.URI
+		skunky.Lang = ResolveLang(r.Header.Get("Accept-Language"))
 		skunky.QueryRaw = arg("q")
 		skunky.Query = url.QueryEscape(skunky.QueryRaw)
 		skunky.Page = p

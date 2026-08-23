@@ -36,6 +36,7 @@ type config struct {
 	Nsfw          bool        `json:"nsfw"`
 	HideAI        bool        `json:"hide-ai"`
 	Theme         string      `json:"theme"`
+	Language      string      `json:"language"`
 	UserAgent     string      `json:"user-agent"`
 	DownloadProxy string      `json:"download-proxy"`
 	StaticPath    string      `json:"static-path"`
@@ -44,10 +45,11 @@ type config struct {
 // CFG is the running instance's configuration, holding the defaults below until
 // ExecuteConfig overwrites them from the config file.
 var CFG = config{
-	cfg:    "config.json",
-	Listen: "127.0.0.1:3003",
-	Theme:  "auto",
-	URI:    "/",
+	cfg:      "config.json",
+	Listen:   "127.0.0.1:3003",
+	Theme:    "auto",
+	Language: "auto",
+	URI:      "/",
 	Cache: cacheConfig{
 		Enabled:        false,
 		Path:           "cache",

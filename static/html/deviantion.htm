@@ -6,33 +6,33 @@
         <figure>
             <img src="{{.BasePath}}media/emojitar/{{.Templates.Deviation.Post.Deviation.Author.Username}}?type=a" width="30px" alt="{{.Templates.Deviation.Post.Deviation.Author.Username}} avatar">
             <span><strong><a href="{{.BasePath}}group_user?type=about&q={{.Templates.Deviation.Post.Deviation.Author.Username}}">{{.Templates.Deviation.Post.Deviation.Author.Username}}</a></strong> — {{if (.Templates.Deviation.Post.Deviation.DD)}}
-                <span class="dd" title="Daily Deviation!"><b>{{.Templates.Deviation.Post.Deviation.Title}}</b></span>
+                <span class="dd" title="{{T "deviation.daily"}}"><b>{{.Templates.Deviation.Post.Deviation.Title}}</b></span>
                 {{else}}{{.Templates.Deviation.Post.Deviation.Title}}{{end}}
-                 {{if (ne .Templates.Deviation.Post.Deviation.License "none")}}<mark title="License">{{.Templates.Deviation.Post.Deviation.License}}</mark>{{end}} {{if (.Templates.Deviation.Post.Deviation.AI)}}[🤖]{{end}} 
-                 {{if (.Templates.Deviation.Post.Deviation.NSFW)}}[<span class="nsfw">NSFW</span>]{{end}}
+                 {{if (ne .Templates.Deviation.Post.Deviation.License "none")}}<mark title="{{T "deviation.license"}}">{{.Templates.Deviation.Post.Deviation.License}}</mark>{{end}} {{if (.Templates.Deviation.Post.Deviation.AI)}}[🤖]{{end}} 
+                 {{if (.Templates.Deviation.Post.Deviation.NSFW)}}[<span class="nsfw">{{T "deviation.nsfw"}}</span>]{{end}}
             </span>
             <br>
             {{if (ne .Templates.Deviation.Post.IMG "")}}
-            <a href="{{.Templates.Deviation.Post.IMG}}" title="open/download image"><img src="{{.Templates.Deviation.Post.IMG}}" width="50%" alt="{{.Templates.Deviation.Post.Deviation.Title}}"></a>
+            <a href="{{.Templates.Deviation.Post.IMG}}" title="{{T "deviation.open"}}"><img src="{{.Templates.Deviation.Post.IMG}}" width="50%" alt="{{.Templates.Deviation.Post.Deviation.Title}}"></a>
             <br>
             {{end}}
             {{if (ne .Templates.Deviation.Tags "")}}
             {{.Templates.Deviation.Tags}}<br>
             {{end}}
-            <span>Published: <strong>{{.Templates.Deviation.StringTime}}</strong>; Views: <strong>{{.Templates.Deviation.Post.Deviation.Stats.Views}}</strong>; Favourites: <strong>{{.Templates.Deviation.Post.Deviation.Stats.Favourites}}</strong>; Downloads: <strong>{{.Templates.Deviation.Post.Deviation.Stats.Downloads}}</strong>
-            <br><a target="_blank" href="https://www.deviantart.com/{{.Templates.Deviation.Post.Deviation.Author.Username}}/art/art-{{.Templates.Deviation.Post.Deviation.ID}}">Redirect to original</a>
+            <span>{{T "deviation.published"}}<strong>{{.Templates.Deviation.StringTime}}</strong>; Views: <strong>{{.Templates.Deviation.Post.Deviation.Stats.Views}}</strong>; Favourites: <strong>{{.Templates.Deviation.Post.Deviation.Stats.Favourites}}</strong>; Downloads: <strong>{{.Templates.Deviation.Post.Deviation.Stats.Downloads}}</strong>
+            <br><a target="_blank" href="https://www.deviantart.com/{{.Templates.Deviation.Post.Deviation.Author.Username}}/art/art-{{.Templates.Deviation.Post.Deviation.ID}}">{{T "deviation.original"}}</a>
             </span>
             {{if (ne .Templates.Deviation.Post.Description "")}}
             <figcaption>
                 <details>
-                    <summary>Description</summary>
+                    <summary>{{T "deviation.description"}}</summary>
                     {{.Templates.Deviation.Post.Description}}
                 </details>
             </figcaption>
             {{end}}
             {{if ne .Templates.Deviation.Related ""}}
             <details>
-                <summary>Related content</summary>
+                <summary>{{T "deviation.related"}}</summary>
                 {{.Templates.Deviation.Related}}
             </details>
             {{end}}

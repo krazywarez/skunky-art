@@ -82,6 +82,19 @@ func (s skunkyart) ParseComments(c devianter.Comments, daError devianter.Error) 
 // DeviationList renders devs as an HTML grid, or as an Atom feed when the
 // request asked for one and allowAtom permits it. NSFW entries are dropped
 // unless the instance allows them. Passing content adds a navigation bar.
+// VisibleDeviation reports whether a deviation may be shown by this instance.
+//
+// Both the HTML listing and the JSON API ask this, deliberately: an API that
+// returned what the pages hide would leak exactly what hide-ai and the NSFW
+// setting exist to withhold, and a second copy of the rule is a second thing to
+// forget to update.
+func VisibleDeviation(d *devianter.Deviation) bool {
+	if d.AI && CFG.HideAI {
+		return false
+	}
+	return !d.NSFW || CFG.Nsfw
+}
+
 func (s skunkyart) DeviationList(devs []devianter.Deviation, allowAtom bool, content ...DeviationList) string {
 	if s.Atom && s.Page > 1 {
 		s.ReturnHTTPError(400)
@@ -92,10 +105,10 @@ func (s skunkyart) DeviationList(devs []devianter.Deviation, allowAtom bool, con
 
 	for i, l := 0, len(devs); i < l; i++ {
 		data := &devs[i]
-		if data.AI && CFG.HideAI {
+		if !VisibleDeviation(data) {
 			continue
 		}
-		if preview, fullview := ParseMedia(s.Host, data.Media, 320), ParseMedia(s.Host, data.Media); !data.NSFW || CFG.Nsfw {
+		if preview, fullview := ParseMedia(s.Host, data.Media, 320), ParseMedia(s.Host, data.Media); true {
 			if allowAtom && s.Atom {
 				s.Writer.Header().Add("Content-Type", "application/atom+xml")
 				id := strconv.Itoa(data.ID)

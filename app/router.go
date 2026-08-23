@@ -147,6 +147,10 @@ func Router() {
 				skunky.API.Info()
 			case "random":
 				skunky.API.Random()
+			case "search":
+				skunky.API.Search()
+			case "post":
+				skunky.API.Post(path[3], path[4])
 			default:
 				skunky.API.Error("Not Found", 404)
 			}

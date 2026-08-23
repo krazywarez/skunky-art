@@ -6,46 +6,46 @@
         <p>
             SkunkyArt is an alternative frontend for deviantart.com, written in Go.
         </p>
-        <h3><a href="https://github.com/krazywarez/skunky-art/issues" target="_blank">Report an issue</a></h3>
-        <b>Instance settings:</b>
+        <h3><a href="https://github.com/krazywarez/skunky-art/issues" target="_blank">{{T "about.report"}}</a></h3>
+        <b>{{T "about.settings"}}</b>
         <ul>
-            <li><b>NSFW</b>: <span class="about-{{.Templates.About.Nsfw}}">{{if .Templates.About.Nsfw}}YES{{else}}NO{{end}}</span></li>
-            <li><b>Proxyfing</b>: <span class="about-{{.Templates.About.Proxy}}">{{if .Templates.About.Proxy}}YES{{else}}NO{{end}}</span></li>
-            <li><b>Hide AI</b>: <span class="about-{{.Templates.About.HideAI}}">{{if .Templates.About.HideAI}}YES{{else}}NO{{end}}</span></li>
-            <li><b>Theme</b>: {{.Templates.About.Theme}}</li>
+            <li><b>{{T "about.nsfw"}}</b>: <span class="about-{{.Templates.About.Nsfw}}">{{if .Templates.About.Nsfw}}YES{{else}}NO{{end}}</span></li>
+            <li><b>{{T "about.proxy"}}</b>: <span class="about-{{.Templates.About.Proxy}}">{{if .Templates.About.Proxy}}YES{{else}}NO{{end}}</span></li>
+            <li><b>{{T "about.hideai"}}</b>: <span class="about-{{.Templates.About.HideAI}}">{{if .Templates.About.HideAI}}YES{{else}}NO{{end}}</span></li>
+            <li><b>{{T "about.theme"}}</b>: {{.Templates.About.Theme}}</li>
         </ul>
         <details>
-            <summary><b>Instances:</b></summary>
+            <summary><b>{{T "about.instances"}}</b></summary>
             <ul>
                 {{range .Templates.About.Instances}}
                 <li><u><b>{{.Title}}</b></u>:
                     <ul>
-                        <li><b>Country</b>: {{.Country}}</li>
-                        <li><b>URLs</b>: </li>
+                        <li><b>{{T "about.country"}}</b>: {{.Country}}</li>
+                        <li><b>{{T "about.urls"}}</b>: </li>
                         <ul>
                             {{if ne .Urls.I2P ""}}
-                            <li><b>I2P</b>: <a href="{{.Urls.I2P}}">Yes</a></li>
+                            <li><b>I2P</b>: <a href="{{.Urls.I2P}}">{{T "about.yes"}}</a></li>
                             {{end}}
                             {{if ne .Urls.Ygg ""}}
-                            <li><b>Ygg</b>: <a href="{{.Urls.Ygg}}">Yes</a></li>
+                            <li><b>Ygg</b>: <a href="{{.Urls.Ygg}}">{{T "about.yes"}}</a></li>
                             {{end}}
                             {{if ne .Urls.Tor ""}}
-                            <li><b>Tor</b>: <a href="{{.Urls.Tor}}">Yes</a></li>
+                            <li><b>Tor</b>: <a href="{{.Urls.Tor}}">{{T "about.yes"}}</a></li>
                             {{end}}
                             {{if ne .Urls.Clearnet ""}}
                             <li><b>Clearnet</b>: <a href="{{.Urls.Clearnet}}">{{.Urls.Clearnet}}</a></li>
                             {{end}}
                         </ul>
-                        <li><b>Settings</b>: </li>
+                        <li><b>{{T "common.settings"}}</b>: </li>
                         <ul>
-                            <li><b>NSFW</b>: <span class="about-{{.Settings.Nsfw}}">{{if .Settings.Nsfw}}YES{{else}}NO{{end}}</span></li>
-                            <li><b>Proxyfing</b>: <span class="about-{{.Settings.Proxy}}">{{if .Settings.Proxy}}YES{{else}}NO{{end}}</span></li>
+                            <li><b>{{T "about.nsfw"}}</b>: <span class="about-{{.Settings.Nsfw}}">{{if .Settings.Nsfw}}YES{{else}}NO{{end}}</span></li>
+                            <li><b>{{T "about.proxy"}}</b>: <span class="about-{{.Settings.Proxy}}">{{if .Settings.Proxy}}YES{{else}}NO{{end}}</span></li>
                         </ul>
                     </ul>
                 </li>
                 {{end}}
             </ul>
         </details>
-        <p>Copyright <a href="https://git.macaw.me/skunky/SkunkyArt" target="_blank">lost+skunk</a> and <a href="https://github.com/krazywarez" target="_blank">zerolabs</a>, X11. <a href="https://github.com/krazywarez/skunky-art/releases/tag/v{{.Version}}" target="_blank">SkunkyArt v{{.Version}}</a></p>
+        <p>{{T "about.copyright"}}<a href="https://git.macaw.me/skunky/SkunkyArt" target="_blank">lost+skunk</a> and <a href="https://github.com/krazywarez" target="_blank">zerolabs</a>, X11. <a href="https://github.com/krazywarez/skunky-art/releases/tag/v{{.Version}}" target="_blank">SkunkyArt v{{.Version}}</a></p>
     </main>
 </html>

@@ -63,3 +63,17 @@ server {
   `light` pins one for everybody. An unrecognised value stops startup rather
   than quietly falling back.
 
+* `language` — Interface language. `auto` (default) reads the browser's own
+  `Accept-Language` header, which it sends on every request anyway, so nothing
+  extra is stored or asked for. A language code (`en`, `es`) pins one for
+  everybody. An unknown code falls back to English rather than refusing to
+  start, since a missing catalogue is a worse reason to be down than to be in
+  the wrong language.
+
+  Catalogues live in `static/lang/*.json`, keyed by the strings the templates
+  ask for. `en.json` is the reference and is always complete; a catalogue that
+  is missing a key shows the English for that one string, so a partial
+  translation is useful immediately. To add a language, copy `en.json`,translate it,
+  and name it after the code.
+
+

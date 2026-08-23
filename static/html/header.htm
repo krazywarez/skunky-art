@@ -1,14 +1,14 @@
 {{define "header"}}
 <header>
-    <h1><a href="">HOME</a> | <a href="dd">DD</a> {{if eq .Endpoint "dd"}}| <a href="{{.Endpoint}}?atom=true">RSS</a>{{end}}</h1>
+    <h1><a href="">{{T "nav.home"}}</a> | <a href="dd">DD</a> {{if eq .Endpoint "dd"}}| <a href="{{.Endpoint}}?atom=true">{{T "nav.rss"}}</a>{{end}}</h1>
     <form method="get" action="search">
-        <input type="text" name="q" aria-label="Search query" placeholder="Search for ..." autocomplete="off" autocapitalize="none" spellcheck="false" value="{{.QueryRaw}}">
+        <input type="text" name="q" aria-label="Search query" placeholder="{{T "search.placeholder"}}" autocomplete="off" autocapitalize="none" spellcheck="false" value="{{.QueryRaw}}">
         <select name="type" aria-label="Search type">
-            <option value="all">All</option>
-            <option value="tag">Tag</option>
-            <option value="r">Groups</option>
+            <option value="all">{{T "search.all"}}</option>
+            <option value="tag">{{T "search.tag"}}</option>
+            <option value="r">{{T "search.groups"}}</option>
         </select>
-        <button type="submit">Search!</button>
+        <button type="submit">{{T "search.submit"}}</button>
     </form>
 </header>
 {{end}}

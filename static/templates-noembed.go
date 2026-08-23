@@ -169,3 +169,15 @@ func (f *File) Close() error {
 	f.closed = true
 	return nil
 }
+
+// LanguageFiles lists the assets under lang/, which is how the i18n loader finds
+// catalogues without the FS needing directory listing.
+func LanguageFiles() []string {
+	var out []string
+	for _, x := range templates["lang"] {
+		if strings.HasSuffix(x.name, ".json") {
+			out = append(out, x.name)
+		}
+	}
+	return out
+}

@@ -23,5 +23,12 @@
 
 - [x] Implement an API
 - [x] Implement themes
-- [ ] Switch to arenas in the cache
+- [~] Switch to arenas in the cache — not doing this. An arena frees a whole
+      region at once, and the media cache evicts entries individually by score
+      (see `ageMemCache`), so entries would either outlive their eviction until
+      the whole arena went, or need one arena each, which is allocation with
+      extra bookkeeping. Arenas suit request-scoped allocation, not a
+      long-lived scored cache. They also remain behind `GOEXPERIMENT=arenas`,
+      unsupported and paused upstream, which every build and the Dockerfile
+      would have to carry.
 - [x] Implement a multilingual interface

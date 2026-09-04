@@ -9,7 +9,7 @@ instances are dead links. this fork keeps it maintained.
 skunkyart. alternative frontend for deviantart. works with no
 javascript.
 
-instances: INSTANCES.txt
+instances: INSTANCES.md
 
 * build
 build with the embed tag to embed presets in the binary. skip the
@@ -38,8 +38,8 @@ image; compose.vpn_example.yml adds an optional vpn egress sidecar.
 
 * config
 sample config in config.example.json. custom config with --config.
-directive details in SETUP.txt.
+directive details in SETUP.md.
 
 * instances
-add yours by pr to instances.json and INSTANCES.txt (or use
+add yours by pr to instances.json and INSTANCES.md (or use
 --add-instance to write both), or open an issue.

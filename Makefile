@@ -4,7 +4,7 @@
 VERSION ?= $(shell git describe --tags --always --dirty 2>/dev/null | sed 's/^v//')
 LDFLAGS  = -s -w -X main.version=$(VERSION)
 GOFLAGS  = -trimpath -buildvcs=false
-LINT     = github.com/golangci/golangci-lint/v2/cmd/golangci-lint@v2.13.2
+LINT     = github.com/golangci/golangci-lint/v2/cmd/golangci-lint@v2.14.0
 
 # os/arch pairs packaged by `make dist`.
 PLATFORMS = linux/amd64 linux/arm64 darwin/arm64 freebsd/amd64

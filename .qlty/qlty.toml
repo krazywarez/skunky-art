@@ -1,0 +1,44 @@
+config_version = "0"
+
+exclude_patterns = [
+  "**/vendor/**",
+  "**/node_modules/**",
+  "**/testdata/**",
+  "**/dist/**",
+  "**/.build/**",
+  "**/build/**",
+  "**/*.min.*",
+  "**/generated/**",
+  ".claude/**",
+  "**/Pods/**",
+]
+
+test_patterns = [
+  "**/test/**",
+  "**/tests/**",
+  "**/Tests/**",
+  "**/*_test.*",
+  "**/test_*.*",
+  "**/*.test.*",
+  "**/*Tests.swift",
+  "e2e/**",
+]
+
+[[source]]
+name = "default"
+default = true
+
+[[plugin]]
+name = "osv-scanner"
+
+[[plugin]]
+name = "trufflehog"
+
+# Early returns are guard clauses, which keep the happy path unindented.
+[smells.return_statements]
+enabled = false
+
+# Total file complexity is the sum of its functions, which function_complexity
+# already checks.
+[smells.file_complexity]
+enabled = false

@@ -130,32 +130,35 @@ type skunkyart struct {
 			Comments    template.HTML
 		}
 
-		GroupUser struct {
-			GR           devianter.GRuser
-			Admins       template.HTML
-			Group        bool
-			CreationDate string
-
-			About struct {
-				A devianter.About
-
-				DescriptionFormatted template.HTML
-				Interests, Social    template.HTML
-				Comments             template.HTML
-				BG                   string
-				BGMeta               devianter.Deviation
-			}
-
-			Gallery struct {
-				Folders template.HTML
-				Pages   int
-				List    template.HTML
-			}
-		}
-		Search struct {
+		GroupUser groupUserPage
+		Search    struct {
 			Content devianter.Search
 			List    template.HTML
 		}
+	}
+}
+
+// groupUserPage is the data the group/user page template renders.
+type groupUserPage struct {
+	GR           devianter.GRuser
+	Admins       template.HTML
+	Group        bool
+	CreationDate string
+
+	About struct {
+		A devianter.About
+
+		DescriptionFormatted template.HTML
+		Interests, Social    template.HTML
+		Comments             template.HTML
+		BG                   string
+		BGMeta               devianter.Deviation
+	}
+
+	Gallery struct {
+		Folders template.HTML
+		Pages   int
+		List    template.HTML
 	}
 }
 
@@ -434,40 +437,10 @@ func (s skunkyart) NavBase(c DeviationList) string {
 	var list strings.Builder
 
 	list.WriteString("<br>")
-	prevrev := func(msg string, page int, onpage bool) {
-		if !onpage {
-			list.WriteString(`<a href="`)
-			list.WriteString(esc(s._pth))
-			list.WriteString(`?p=`)
-			list.WriteString(strconv.Itoa(page))
-			if s.Type != 0 {
-				list.WriteString("&type=")
-				list.WriteRune(s.Type)
-			}
-			if s.Query != "" {
-				list.WriteString("&q=")
-				list.WriteString(esc(s.Query))
-			}
-			if f := s.Args.Get("folder"); f != "" {
-				list.WriteString("&folder=")
-				list.WriteString(esc(f))
-			}
-			if s.Args.Get("comments") != "" {
-				list.WriteString("&comments=1")
-			}
-			list.WriteString(`">`)
-			list.WriteString(msg)
-			list.WriteString("</a> ")
-		} else {
-			list.WriteString(strconv.Itoa(page))
-			list.WriteString(" ")
-		}
-	}
-
 	p := s.Page
 
 	if p > 1 {
-		prevrev("<= "+esc(T(s.Lang, "nav.prev"))+" |", p-1, false)
+		s.writeNavLink(&list, "<= "+esc(T(s.Lang, "nav.prev"))+" |", p-1, false)
 	} else {
 		p = 1
 	}
@@ -482,19 +455,54 @@ func (s skunkyart) NavBase(c DeviationList) string {
 
 	for i, x := p-6, 0; (i <= last && i <= p+6) && x < 12; i++ {
 		if i > 0 {
-			var onPage bool
-			if i == p {
-				onPage = true
-			}
-
-			prevrev(strconv.Itoa(i), i, onPage)
+			s.writeNavLink(&list, strconv.Itoa(i), i, i == p)
 			x++
 		}
 	}
 
 	if c.More {
-		prevrev("| "+esc(T(s.Lang, "nav.next"))+" =>", p+1, false)
+		s.writeNavLink(&list, "| "+esc(T(s.Lang, "nav.next"))+" =>", p+1, false)
 	}
 
 	return list.String()
+}
+
+// writeNavLink writes a link to page labelled msg, or just the page number
+// when it is the current page.
+func (s skunkyart) writeNavLink(list *strings.Builder, msg string, page int, onpage bool) {
+	if onpage {
+		list.WriteString(strconv.Itoa(page))
+		list.WriteString(" ")
+		return
+	}
+	list.WriteString(`<a href="`)
+	list.WriteString(esc(s._pth))
+	list.WriteString(s.pageQuery(page))
+	list.WriteString(`">`)
+	list.WriteString(msg)
+	list.WriteString("</a> ")
+}
+
+// pageQuery is the query string for page, carrying over the request's type,
+// search, folder, and comments arguments.
+func (s skunkyart) pageQuery(page int) string {
+	var q strings.Builder
+	q.WriteString(`?p=`)
+	q.WriteString(strconv.Itoa(page))
+	if s.Type != 0 {
+		q.WriteString("&type=")
+		q.WriteRune(s.Type)
+	}
+	if s.Query != "" {
+		q.WriteString("&q=")
+		q.WriteString(esc(s.Query))
+	}
+	if f := s.Args.Get("folder"); f != "" {
+		q.WriteString("&folder=")
+		q.WriteString(esc(f))
+	}
+	if s.Args.Get("comments") != "" {
+		q.WriteString("&comments=1")
+	}
+	return q.String()
 }

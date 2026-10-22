@@ -110,7 +110,8 @@ func (s skunkyart) DeviationList(devs []devianter.Deviation, allowAtom bool, con
 		return ""
 	}
 
-	var list, listContent strings.Builder
+	atom := allowAtom && s.Atom
+	var listContent strings.Builder
 	var newest time.Time // the latest entry, for the feed's own <updated>
 
 	for i, l := 0, len(devs); i < l; i++ {
@@ -118,129 +119,156 @@ func (s skunkyart) DeviationList(devs []devianter.Deviation, allowAtom bool, con
 		if !VisibleDeviation(data) {
 			continue
 		}
-		// Escaped once here: the same values go into both the HTML grid and the
-		// Atom feed, and html.EscapeString produces entities XML accepts too.
-		author, title := esc(data.Author.Username), esc(data.Title)
-		postURL := esc(ConvertDeviantArtURLToSkunkyArt(s.Host, data.Url))
-		if preview, fullview := esc(ParseMedia(s.Host, data.Media, 320)), esc(ParseMedia(s.Host, data.Media)); true {
-			if allowAtom && s.Atom {
-				s.Writer.Header().Add("Content-Type", "application/atom+xml")
-				// The entry id is the post's URL here: Atom wants an IRI, and a
-				// bare number is not one. Timestamps are RFC 3339, the only form
-				// the format allows.
-				entryURL := esc(URLBuilder(s.Host, "post", data.Author.Username, "atom-"+strconv.Itoa(data.ID)))
-				published := data.PublishedTime.UTC()
-				if published.After(newest) {
-					newest = published
-				}
-				listContent.WriteString(`<entry><author><name>`)
-				listContent.WriteString(author)
-				listContent.WriteString(`</name></author><title>`)
-				listContent.WriteString(title)
-				listContent.WriteString(`</title><link rel="alternate" type="text/html" href="`)
-				listContent.WriteString(entryURL)
-				listContent.WriteString(`"/><id>`)
-				listContent.WriteString(entryURL)
-				listContent.WriteString(`</id><published>`)
-				listContent.WriteString(published.Format(time.RFC3339))
-				listContent.WriteString(`</published><updated>`)
-				listContent.WriteString(published.Format(time.RFC3339))
-				listContent.WriteString(`</updated>`)
-				listContent.WriteString(`<media:group><media:title>`)
-				listContent.WriteString(title)
-				listContent.WriteString(`</media:title><media:thumbnail url="`)
-				listContent.WriteString(preview)
-				listContent.WriteString(`"/></media:group><content type="xhtml"><div xmlns="http://www.w3.org/1999/xhtml"><a href="`)
-				listContent.WriteString(postURL)
-				listContent.WriteString(`"><img src="`)
-				listContent.WriteString(fullview)
-				listContent.WriteString(`"/></a><p>`)
-				listContent.WriteString(ParseDescription(s.Host, data.TextContent))
-				listContent.WriteString(`</p></div></content></entry>`)
-			} else {
-				listContent.WriteString(`<div class="block">`)
-				if fullview != "" && preview != "" {
-					listContent.WriteString(`<a title="` + esc(T(s.Lang, "deviation.open")) + `" href="`)
-					listContent.WriteString(fullview)
-					listContent.WriteString(`"><img loading="lazy" src="`)
-					listContent.WriteString(preview)
-					listContent.WriteString(`" width="15%" alt="`)
-					listContent.WriteString(author)
-					listContent.WriteString(" - ")
-					listContent.WriteString(title)
-					listContent.WriteString(`"></a>`)
-				} else {
-					listContent.WriteString("<h1>[ " + esc(T(s.Lang, "list.text")) + " ]</h1>")
-				}
-				listContent.WriteString(`<br><a href="`)
-				listContent.WriteString(postURL)
-				listContent.WriteString(`">`)
-				listContent.WriteString(author)
-				listContent.WriteString(" - ")
-				listContent.WriteString(title)
-
-				if data.NSFW {
-					listContent.WriteString(` [<span class="nsfw">NSFW</span>]`)
-				}
-				if data.AI {
-					listContent.WriteString(" [🤖]")
-				}
-				if data.DD {
-					listContent.WriteString(` [<span class="dd">DD</span>]`)
-				}
-
-				listContent.WriteString("</a></div>")
+		item := s.listItem(data)
+		if atom {
+			s.Writer.Header().Add("Content-Type", "application/atom+xml")
+			if published := s.writeAtomEntry(&listContent, data, item); published.After(newest) {
+				newest = published
 			}
+		} else {
+			s.writeGridEntry(&listContent, data, item)
 		}
 	}
 
-	if allowAtom && s.Atom {
-		list.WriteString(`<?xml version="1.0" encoding="UTF-8"?><feed xmlns:media="http://search.yahoo.com/mrss/" xmlns="http://www.w3.org/2005/Atom">`)
+	if atom {
+		feed := s.atomFeed(devs, listContent.String(), newest)
+		wr(s.Writer, feed)
+		return feed
+	}
 
-		list.WriteString(`<title>`)
-		switch {
-		case s.Type == 0:
-			list.WriteString("Daily Deviations")
-		case s.Type == 'g' && len(devs) != 0:
-			list.WriteString(esc(devs[0].Author.Username))
-		default:
-			list.WriteString("SkunkyArt")
-		}
-		list.WriteString(`</title>`)
+	var list strings.Builder
+	list.WriteString(`<div class="content">`)
+	list.WriteString(listContent.String())
+	list.WriteString("</div>")
+	if content != nil {
+		list.WriteString(s.NavBase(content[0]))
+	}
+	return list.String()
+}
 
-		// Atom requires a feed id and updated time; readers reject a feed
-		// without them. The id is the feed's own URL on this instance.
-		feedURL := esc(s.Host + s._pth + "?" + s.Args.Encode())
-		if newest.IsZero() {
-			newest = time.Now().UTC()
-		}
-		list.WriteString(`<id>`)
-		list.WriteString(feedURL)
-		list.WriteString(`</id><updated>`)
-		list.WriteString(newest.Format(time.RFC3339))
-		list.WriteString(`</updated><link rel="self" type="application/atom+xml" href="`)
-		list.WriteString(feedURL)
-		list.WriteString(`"/>`)
+// listEntry holds one deviation's values for a list, escaped once: the same
+// values go into both the HTML grid and the Atom feed, and html.EscapeString
+// produces entities XML accepts too.
+type listEntry struct {
+	author, title, postURL, preview, fullview string
+}
 
-		list.WriteString(`<link rel="alternate" href="`)
-		list.WriteString(esc(s.Host))
-		list.WriteString(`"/>`)
+func (s skunkyart) listItem(data *devianter.Deviation) listEntry {
+	return listEntry{
+		author:   esc(data.Author.Username),
+		title:    esc(data.Title),
+		postURL:  esc(ConvertDeviantArtURLToSkunkyArt(s.Host, data.Url)),
+		preview:  esc(ParseMedia(s.Host, data.Media, 320)),
+		fullview: esc(ParseMedia(s.Host, data.Media)),
+	}
+}
 
-		list.WriteString(listContent.String())
+// writeAtomEntry writes one feed entry and returns its published time.
+func (s skunkyart) writeAtomEntry(b *strings.Builder, data *devianter.Deviation, item listEntry) time.Time {
+	// The entry id is the post's URL here: Atom wants an IRI, and a
+	// bare number is not one. Timestamps are RFC 3339, the only form
+	// the format allows.
+	entryURL := esc(URLBuilder(s.Host, "post", data.Author.Username, "atom-"+strconv.Itoa(data.ID)))
+	published := data.PublishedTime.UTC()
+	b.WriteString(`<entry><author><name>`)
+	b.WriteString(item.author)
+	b.WriteString(`</name></author><title>`)
+	b.WriteString(item.title)
+	b.WriteString(`</title><link rel="alternate" type="text/html" href="`)
+	b.WriteString(entryURL)
+	b.WriteString(`"/><id>`)
+	b.WriteString(entryURL)
+	b.WriteString(`</id><published>`)
+	b.WriteString(published.Format(time.RFC3339))
+	b.WriteString(`</published><updated>`)
+	b.WriteString(published.Format(time.RFC3339))
+	b.WriteString(`</updated>`)
+	b.WriteString(`<media:group><media:title>`)
+	b.WriteString(item.title)
+	b.WriteString(`</media:title><media:thumbnail url="`)
+	b.WriteString(item.preview)
+	b.WriteString(`"/></media:group><content type="xhtml"><div xmlns="http://www.w3.org/1999/xhtml"><a href="`)
+	b.WriteString(item.postURL)
+	b.WriteString(`"><img src="`)
+	b.WriteString(item.fullview)
+	b.WriteString(`"/></a><p>`)
+	b.WriteString(ParseDescription(s.Host, data.TextContent))
+	b.WriteString(`</p></div></content></entry>`)
+	return published
+}
 
-		list.WriteString("</feed>")
-		wr(s.Writer, list.String())
+func (s skunkyart) writeGridEntry(b *strings.Builder, data *devianter.Deviation, item listEntry) {
+	b.WriteString(`<div class="block">`)
+	if item.fullview != "" && item.preview != "" {
+		b.WriteString(`<a title="` + esc(T(s.Lang, "deviation.open")) + `" href="`)
+		b.WriteString(item.fullview)
+		b.WriteString(`"><img loading="lazy" src="`)
+		b.WriteString(item.preview)
+		b.WriteString(`" width="15%" alt="`)
+		b.WriteString(item.author)
+		b.WriteString(" - ")
+		b.WriteString(item.title)
+		b.WriteString(`"></a>`)
 	} else {
-		list.WriteString(`<div class="content">`)
+		b.WriteString("<h1>[ " + esc(T(s.Lang, "list.text")) + " ]</h1>")
+	}
+	b.WriteString(`<br><a href="`)
+	b.WriteString(item.postURL)
+	b.WriteString(`">`)
+	b.WriteString(item.author)
+	b.WriteString(" - ")
+	b.WriteString(item.title)
 
-		list.WriteString(listContent.String())
-
-		list.WriteString("</div>")
-		if content != nil {
-			list.WriteString(s.NavBase(content[0]))
-		}
+	if data.NSFW {
+		b.WriteString(` [<span class="nsfw">NSFW</span>]`)
+	}
+	if data.AI {
+		b.WriteString(" [🤖]")
+	}
+	if data.DD {
+		b.WriteString(` [<span class="dd">DD</span>]`)
 	}
 
+	b.WriteString("</a></div>")
+}
+
+// atomFeed wraps the entries in an Atom feed for this request.
+func (s skunkyart) atomFeed(devs []devianter.Deviation, entries string, newest time.Time) string {
+	var list strings.Builder
+	list.WriteString(`<?xml version="1.0" encoding="UTF-8"?><feed xmlns:media="http://search.yahoo.com/mrss/" xmlns="http://www.w3.org/2005/Atom">`)
+
+	list.WriteString(`<title>`)
+	switch {
+	case s.Type == 0:
+		list.WriteString("Daily Deviations")
+	case s.Type == 'g' && len(devs) != 0:
+		list.WriteString(esc(devs[0].Author.Username))
+	default:
+		list.WriteString("SkunkyArt")
+	}
+	list.WriteString(`</title>`)
+
+	// Atom requires a feed id and updated time; readers reject a feed
+	// without them. The id is the feed's own URL on this instance.
+	feedURL := esc(s.Host + s._pth + "?" + s.Args.Encode())
+	if newest.IsZero() {
+		newest = time.Now().UTC()
+	}
+	list.WriteString(`<id>`)
+	list.WriteString(feedURL)
+	list.WriteString(`</id><updated>`)
+	list.WriteString(newest.Format(time.RFC3339))
+	list.WriteString(`</updated><link rel="self" type="application/atom+xml" href="`)
+	list.WriteString(feedURL)
+	list.WriteString(`"/>`)
+
+	list.WriteString(`<link rel="alternate" href="`)
+	list.WriteString(esc(s.Host))
+	list.WriteString(`"/>`)
+
+	list.WriteString(entries)
+
+	list.WriteString("</feed>")
 	return list.String()
 }
 
@@ -285,206 +313,241 @@ func ParseDescription(host string, dscr devianter.Text) string {
 		return renderDocument(host, doc)
 	}
 
+	description, dl := dscr.Html.Markup, len(dscr.Html.Markup)
+	if dl != 0 && description[0] == '{' && description[dl-1] == '}' {
+		return renderDraftJS(host, description)
+	}
+	if dl != 0 {
+		return renderMarkupHTML(host, description)
+	}
+	return ""
+}
+
+// tagBuilder wraps content in each tag in turn, innermost first.
+func tagBuilder(content string, tags ...string) string {
+	for _, tag := range tags {
+		var htm strings.Builder
+		htm.WriteString("<")
+		htm.WriteString(tag)
+		htm.WriteString(">")
+		htm.WriteString(content)
+		htm.WriteString("</")
+		htm.WriteString(tag)
+		htm.WriteString(">")
+		content = htm.String()
+	}
+	return content
+}
+
+type draftBlock struct {
+	Text              string `json:"text"`
+	Type              string `json:"type"`
+	InlineStyleRanges []struct {
+		Offset int    `json:"offset"`
+		Length int    `json:"length"`
+		Style  string `json:"style"`
+	} `json:"inlineStyleRanges"`
+	EntityRanges []struct {
+		Offset int `json:"offset"`
+		Length int `json:"length"`
+		Key    int `json:"key"`
+	} `json:"entityRanges"`
+	Data struct {
+		TextAlignment string `json:"textAlignment"`
+	} `json:"data"`
+}
+
+type draftDescription struct {
+	Blocks    []draftBlock `json:"blocks"`
+	EntityMap map[string]struct {
+		Type string `json:"type"`
+		Data struct {
+			URL    string `json:"url"`
+			Config struct {
+				// "aligment" is DeviantArt's own spelling; do not correct it.
+				Aligment string `json:"aligment"`
+				Width    int    `json:"width"`
+			} `json:"config"`
+			Data devianter.Deviation `json:"data"`
+		} `json:"data"`
+	} `json:"entityMap"`
+}
+
+// renderDraftJS renders the older Draft.js description JSON.
+func renderDraftJS(host, description string) string {
+	var descr draftDescription
+	e := json.Unmarshal([]byte(description), &descr)
+	try(e)
+
+	entities := make(map[int]devianter.Deviation)
+	urls := make(map[int]string)
+	for n, x := range descr.EntityMap {
+		num, _ := strconv.Atoi(n)
+		if x.Data.URL != "" {
+			urls[num] = deleteTrackingFromURL(x.Data.URL)
+		}
+		entities[num] = x.Data.Data
+	}
+
 	var parsedDescription strings.Builder
-	TagBuilder := func(content string, tags ...string) string {
-		l := len(tags)
-		for x := range l {
-			var htm strings.Builder
-			htm.WriteString("<")
-			htm.WriteString(tags[x])
-			htm.WriteString(">")
-
-			htm.WriteString(content)
-
-			htm.WriteString("</")
-			htm.WriteString(tags[x])
-			htm.WriteString(">")
-			content = htm.String()
+	for _, x := range descr.Blocks {
+		styles := draftStyles(x)
+		switch x.Type {
+		case "atomic":
+			if len(x.EntityRanges) != 0 {
+				writeDraftArtwork(&parsedDescription, host, entities[x.EntityRanges[0].Key])
+			}
+		case "unstyled":
+			writeDraftText(&parsedDescription, x, styles, urls)
 		}
-		return content
+		parsedDescription.WriteString("<br>")
 	}
-	DeleteTrackingFromURL := deleteTrackingFromURL
-
-	if description, dl := dscr.Html.Markup, len(dscr.Html.Markup); dl != 0 &&
-		description[0] == '{' &&
-		description[dl-1] == '}' {
-		var descr struct {
-			Blocks []struct {
-				Text              string `json:"text"`
-				Type              string `json:"type"`
-				InlineStyleRanges []struct {
-					Offset int    `json:"offset"`
-					Length int    `json:"length"`
-					Style  string `json:"style"`
-				} `json:"inlineStyleRanges"`
-				EntityRanges []struct {
-					Offset int `json:"offset"`
-					Length int `json:"length"`
-					Key    int `json:"key"`
-				} `json:"entityRanges"`
-				Data struct {
-					TextAlignment string `json:"textAlignment"`
-				} `json:"data"`
-			} `json:"blocks"`
-			EntityMap map[string]struct {
-				Type string `json:"type"`
-				Data struct {
-					URL    string `json:"url"`
-					Config struct {
-						// "aligment" is DeviantArt's own spelling; do not correct it.
-						Aligment string `json:"aligment"`
-						Width    int    `json:"width"`
-					} `json:"config"`
-					Data devianter.Deviation `json:"data"`
-				} `json:"data"`
-			} `json:"entityMap"`
-		}
-		e := json.Unmarshal([]byte(description), &descr)
-		try(e)
-
-		entities := make(map[int]devianter.Deviation)
-		urls := make(map[int]string)
-		for n, x := range descr.EntityMap {
-			num, _ := strconv.Atoi(n)
-			if x.Data.URL != "" {
-				urls[num] = DeleteTrackingFromURL(x.Data.URL)
-			}
-			entities[num] = x.Data.Data
-		}
-
-		for _, x := range descr.Blocks {
-			Styles := make([]text, len(x.InlineStyleRanges))
-
-			if len(x.InlineStyleRanges) != 0 {
-				var tags = make(map[int][]string)
-				for n, rngs := range x.InlineStyleRanges {
-					Styles := &Styles[n]
-					switch rngs.Style {
-					case "BOLD":
-						rngs.Style = "b"
-					case "UNDERLINE":
-						rngs.Style = "u"
-					case "ITALIC":
-						rngs.Style = "i"
-					}
-					Styles.From = rngs.Offset
-					Styles.To = rngs.Offset + rngs.Length
-					FT := Styles.From * Styles.To
-					tags[FT] = append(tags[FT], rngs.Style)
-				}
-				for n := range Styles {
-					Styles := &Styles[n]
-					Styles.TxtRaw = x.Text[Styles.From:Styles.To]
-					Styles.Txt = TagBuilder(esc(Styles.TxtRaw), tags[Styles.From*Styles.To]...)
-				}
-			}
-
-			switch x.Type {
-			case "atomic":
-				if len(x.EntityRanges) != 0 {
-					d := entities[x.EntityRanges[0].Key]
-					parsedDescription.WriteString(`<a href="`)
-					parsedDescription.WriteString(esc(ConvertDeviantArtURLToSkunkyArt(host, d.Url)))
-					parsedDescription.WriteString(`"><img width="50%" src="`)
-					parsedDescription.WriteString(esc(ParseMedia(host, d.Media)))
-					parsedDescription.WriteString(`" alt="`)
-					parsedDescription.WriteString(esc(d.Author.Username))
-					parsedDescription.WriteString(" - ")
-					parsedDescription.WriteString(esc(d.Title))
-					parsedDescription.WriteString(`" title="`)
-					parsedDescription.WriteString(esc(d.Author.Username))
-					parsedDescription.WriteString(" - ")
-					parsedDescription.WriteString(esc(d.Title))
-					parsedDescription.WriteString(`"></a>`)
-				}
-			case "unstyled":
-				if l := len(Styles); l != 0 {
-					for n, r := range Styles {
-						var tag string
-						if x.Type == "header-two" {
-							tag = "h2"
-						}
-
-						parsedDescription.WriteString(esc(x.Text[:r.From]))
-						if len(urls) != 0 && len(x.EntityRanges) != 0 {
-							ra := &x.EntityRanges[0]
-
-							parsedDescription.WriteString(`<a target="_blank" href="`)
-							parsedDescription.WriteString(esc(urls[ra.Key]))
-							parsedDescription.WriteString(`">`)
-							parsedDescription.WriteString(r.Txt)
-							parsedDescription.WriteString(`</a>`)
-						} else if l > n+1 {
-							parsedDescription.WriteString(r.Txt)
-						}
-						parsedDescription.WriteString(TagBuilder(tag, esc(x.Text[r.To:])))
-					}
-				} else {
-					parsedDescription.WriteString(esc(x.Text))
-				}
-			}
-			parsedDescription.WriteString("<br>")
-		}
-	} else if dl != 0 {
-		for tt := html.NewTokenizer(strings.NewReader(dscr.Html.Markup)); ; {
-			switch tt.Next() {
-			case html.ErrorToken:
-				return parsedDescription.String()
-			case html.CommentToken, html.DoctypeToken:
-				// No renderable content; skip.
-			case html.StartTagToken, html.EndTagToken, html.SelfClosingTagToken:
-				token := tt.Token()
-				switch token.Data {
-				case "a":
-					for _, a := range token.Attr {
-						if a.Key == "href" {
-							url := DeleteTrackingFromURL(a.Val)
-							parsedDescription.WriteString(`<a target="_blank" href="`)
-							parsedDescription.WriteString(esc(url))
-							parsedDescription.WriteString(`">`)
-							parsedDescription.WriteString(esc(GetValueOfTag(tt)))
-							parsedDescription.WriteString("</a> ")
-						}
-					}
-				case "img":
-					// Only DeviantArt's emoticons are carried over, served
-					// through this instance; any other image is dropped.
-					var uri, title string
-					for _, a := range token.Attr {
-						switch a.Key {
-						case "src":
-							uri = emoticonURL(host, a.Val)
-						case "title":
-							title = a.Val
-						}
-					}
-					if uri != "" {
-						parsedDescription.WriteString(`<img src="`)
-						parsedDescription.WriteString(esc(uri))
-						parsedDescription.WriteString(`" alt="`)
-						parsedDescription.WriteString(esc(title))
-						parsedDescription.WriteString(`" title="`)
-						parsedDescription.WriteString(esc(title))
-						parsedDescription.WriteString(`">`)
-					}
-				case "br", "li", "ul", "p", "b":
-					// The bare tag, not token.String(): that would carry over
-					// whatever attributes DeviantArt's markup put on it.
-					if token.Type == html.EndTagToken {
-						parsedDescription.WriteString("</")
-					} else {
-						parsedDescription.WriteString("<")
-					}
-					parsedDescription.WriteString(token.Data)
-					parsedDescription.WriteString(">")
-				case "div":
-					parsedDescription.WriteString("<p> ")
-				}
-			case html.TextToken:
-				parsedDescription.WriteString(esc(string(tt.Text())))
-			}
-		}
-	}
-
 	return parsedDescription.String()
+}
+
+// draftStyles renders each inline style range of a block as tagged text.
+func draftStyles(x draftBlock) []text {
+	styles := make([]text, len(x.InlineStyleRanges))
+	if len(x.InlineStyleRanges) == 0 {
+		return styles
+	}
+	var tags = make(map[int][]string)
+	for n, rngs := range x.InlineStyleRanges {
+		style := &styles[n]
+		switch rngs.Style {
+		case "BOLD":
+			rngs.Style = "b"
+		case "UNDERLINE":
+			rngs.Style = "u"
+		case "ITALIC":
+			rngs.Style = "i"
+		}
+		style.From = rngs.Offset
+		style.To = rngs.Offset + rngs.Length
+		ft := style.From * style.To
+		tags[ft] = append(tags[ft], rngs.Style)
+	}
+	for n := range styles {
+		style := &styles[n]
+		style.TxtRaw = x.Text[style.From:style.To]
+		style.Txt = tagBuilder(esc(style.TxtRaw), tags[style.From*style.To]...)
+	}
+	return styles
+}
+
+// writeDraftArtwork writes an embedded deviation as a linked thumbnail.
+func writeDraftArtwork(b *strings.Builder, host string, d devianter.Deviation) {
+	b.WriteString(`<a href="`)
+	b.WriteString(esc(ConvertDeviantArtURLToSkunkyArt(host, d.Url)))
+	b.WriteString(`"><img width="50%" src="`)
+	b.WriteString(esc(ParseMedia(host, d.Media)))
+	b.WriteString(`" alt="`)
+	b.WriteString(esc(d.Author.Username))
+	b.WriteString(" - ")
+	b.WriteString(esc(d.Title))
+	b.WriteString(`" title="`)
+	b.WriteString(esc(d.Author.Username))
+	b.WriteString(" - ")
+	b.WriteString(esc(d.Title))
+	b.WriteString(`"></a>`)
+}
+
+// writeDraftText writes an unstyled block with its styled ranges and link.
+func writeDraftText(b *strings.Builder, x draftBlock, styles []text, urls map[int]string) {
+	l := len(styles)
+	if l == 0 {
+		b.WriteString(esc(x.Text))
+		return
+	}
+	for n, r := range styles {
+		var tag string
+		if x.Type == "header-two" {
+			tag = "h2"
+		}
+
+		b.WriteString(esc(x.Text[:r.From]))
+		if len(urls) != 0 && len(x.EntityRanges) != 0 {
+			ra := &x.EntityRanges[0]
+
+			b.WriteString(`<a target="_blank" href="`)
+			b.WriteString(esc(urls[ra.Key]))
+			b.WriteString(`">`)
+			b.WriteString(r.Txt)
+			b.WriteString(`</a>`)
+		} else if l > n+1 {
+			b.WriteString(r.Txt)
+		}
+		b.WriteString(tagBuilder(tag, esc(x.Text[r.To:])))
+	}
+}
+
+// renderMarkupHTML renders plain HTML markup, keeping links, DeviantArt
+// emoticons, and a few bare formatting tags.
+func renderMarkupHTML(host, markup string) string {
+	var parsedDescription strings.Builder
+	for tt := html.NewTokenizer(strings.NewReader(markup)); ; {
+		switch tt.Next() {
+		case html.ErrorToken:
+			return parsedDescription.String()
+		case html.CommentToken, html.DoctypeToken:
+			// No renderable content; skip.
+		case html.StartTagToken, html.EndTagToken, html.SelfClosingTagToken:
+			writeMarkupTag(&parsedDescription, host, tt, tt.Token())
+		case html.TextToken:
+			parsedDescription.WriteString(esc(string(tt.Text())))
+		}
+	}
+}
+
+func writeMarkupTag(b *strings.Builder, host string, tt *html.Tokenizer, token html.Token) {
+	switch token.Data {
+	case "a":
+		for _, a := range token.Attr {
+			if a.Key == "href" {
+				url := deleteTrackingFromURL(a.Val)
+				b.WriteString(`<a target="_blank" href="`)
+				b.WriteString(esc(url))
+				b.WriteString(`">`)
+				b.WriteString(esc(GetValueOfTag(tt)))
+				b.WriteString("</a> ")
+			}
+		}
+	case "img":
+		writeEmoticon(b, host, token)
+	case "br", "li", "ul", "p", "b":
+		// The bare tag, not token.String(): that would carry over
+		// whatever attributes DeviantArt's markup put on it.
+		if token.Type == html.EndTagToken {
+			b.WriteString("</")
+		} else {
+			b.WriteString("<")
+		}
+		b.WriteString(token.Data)
+		b.WriteString(">")
+	case "div":
+		b.WriteString("<p> ")
+	}
+}
+
+// writeEmoticon carries over DeviantArt's emoticons, served through this
+// instance; any other image is dropped.
+func writeEmoticon(b *strings.Builder, host string, token html.Token) {
+	var uri, title string
+	for _, a := range token.Attr {
+		switch a.Key {
+		case "src":
+			uri = emoticonURL(host, a.Val)
+		case "title":
+			title = a.Val
+		}
+	}
+	if uri != "" {
+		b.WriteString(`<img src="`)
+		b.WriteString(esc(uri))
+		b.WriteString(`" alt="`)
+		b.WriteString(esc(title))
+		b.WriteString(`" title="`)
+		b.WriteString(esc(title))
+		b.WriteString(`">`)
+	}
 }

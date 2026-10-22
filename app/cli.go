@@ -70,22 +70,85 @@ type settings struct {
 	Settings    settingsParams `json:"settings"`
 }
 
-func addInstance() {
-	prompt := func(txt string, necessary bool) string {
-		input := bufio.NewScanner(os.Stdin)
-		for {
-			print(txt)
-			print(": ")
-			input.Scan()
+// promptLine asks for a line on stdin, repeating the question until it gets
+// an answer when necessary is set.
+func promptLine(txt string, necessary bool) string {
+	input := bufio.NewScanner(os.Stdin)
+	for {
+		print(txt)
+		print(": ")
+		input.Scan()
 
-			if i := input.Text(); necessary && i == "" {
-				println("Please specify the", txt)
-			} else {
-				return i
-			}
+		if i := input.Text(); necessary && i == "" {
+			println("Please specify the", txt)
+		} else {
+			return i
 		}
 	}
+}
 
+// promptInstance asks for this instance's listing details; its settings come
+// from the running configuration.
+func promptInstance() settings {
+	return settings{
+		Title:       promptLine("Title", true),
+		Country:     promptLine("Country", true),
+		ModifiedSrc: promptLine("Link to modified sources", false),
+		Settings: settingsParams{
+			Nsfw:   CFG.Nsfw,
+			Proxy:  CFG.Proxy,
+			HideAI: CFG.HideAI,
+			Theme:  CFG.Theme,
+		},
+		Urls: settingsUrls{
+			Clearnet: promptLine("Clearnet link", false),
+			Ygg:      promptLine("Yggdrasil link", false),
+			Tor:      promptLine("Onion link", false),
+			I2P:      promptLine("I2P link", false),
+		},
+	}
+}
+
+// instanceMarkdownRow is the INSTANCES.md table row for an instance.
+func instanceMarkdownRow(inst *settings) []byte {
+	var mdstr bytes.Buffer
+
+	mdbuilder := func(yes bool, link string, title string) {
+		switch {
+		case yes && (title != "" && link != ""):
+			mdstr.WriteString("[")
+			mdstr.WriteString(title)
+			mdstr.WriteString("](")
+			mdstr.WriteString(link)
+			mdstr.WriteString(")")
+		case yes && link != "":
+			mdstr.WriteString("[Yes](")
+			mdstr.WriteString(link)
+			mdstr.WriteString(")")
+		case yes:
+			mdstr.WriteString("Yes")
+		default:
+			mdstr.WriteString("No")
+		}
+		mdstr.WriteString("|")
+	}
+
+	mdstr.WriteString("\n|")
+	mdbuilder(inst.Urls.Clearnet != "", inst.Urls.Clearnet, inst.Title)
+	for _, url := range []string{inst.Urls.Ygg, inst.Urls.I2P, inst.Urls.Tor} {
+		mdbuilder(url != "", url, "")
+	}
+	for _, on := range []bool{inst.Settings.Nsfw, inst.Settings.Proxy} {
+		mdbuilder(on, "", "")
+	}
+	mdbuilder(inst.ModifiedSrc != "", inst.ModifiedSrc, "")
+
+	mdstr.WriteString(inst.Country)
+	mdstr.WriteString("|")
+	return mdstr.Bytes()
+}
+
+func addInstance() {
 	var settingsVar struct {
 		Instances []settings `json:"instances"`
 	}
@@ -103,82 +166,22 @@ func addInstance() {
 	}
 	defer func() { try(instancesFile.Close()) }()
 
-	for {
-		if string(instances) == "" {
-			print("\rDownloading instance list...")
-		} else {
-			println("\r\033[2KDownloaded!")
-			try(json.Unmarshal(instances, &settingsVar))
-
-			settingsVar.Instances = append(settingsVar.Instances, settings{
-				Title:       prompt("Title", true),
-				Country:     prompt("Country", true),
-				ModifiedSrc: prompt("Link to modified sources", false),
-				Settings: settingsParams{
-					Nsfw:   CFG.Nsfw,
-					Proxy:  CFG.Proxy,
-					HideAI: CFG.HideAI,
-					Theme:  CFG.Theme,
-				},
-				Urls: settingsUrls{
-					Clearnet: prompt("Clearnet link", false),
-					Ygg:      prompt("Yggdrasil link", false),
-					Tor:      prompt("Onion link", false),
-					I2P:      prompt("I2P link", false),
-				},
-			})
-
-			j, err := json.MarshalIndent(&settingsVar, "", "    ")
-			try(err)
-
-			try(func() error { _, err := instancesJSON.Write(j); return err }())
-
-			settingsVar := &settingsVar.Instances[len(settingsVar.Instances)-1]
-			var mdstr bytes.Buffer
-
-			mdbuilder := func(yes bool, link string, title string) {
-				switch {
-				case yes && (title != "" && link != ""):
-					mdstr.WriteString("[")
-					mdstr.WriteString(title)
-					mdstr.WriteString("](")
-					mdstr.WriteString(link)
-					mdstr.WriteString(")")
-				case yes && link != "":
-					mdstr.WriteString("[Yes](")
-					mdstr.WriteString(link)
-					mdstr.WriteString(")")
-				case yes:
-					mdstr.WriteString("Yes")
-				default:
-					mdstr.WriteString("No")
-				}
-				mdstr.WriteString("|")
-			}
-
-			mdstr.WriteString("\n|")
-			mdbuilder(settingsVar.Urls.Clearnet != "", settingsVar.Urls.Clearnet, settingsVar.Title)
-
-			urls := []string{settingsVar.Urls.Ygg, settingsVar.Urls.I2P, settingsVar.Urls.Tor}
-			for i, l := 0, len(urls); i < l; i++ {
-				url := urls[i]
-				mdbuilder(url != "", url, "")
-			}
-
-			settings := []bool{settingsVar.Settings.Nsfw, settingsVar.Settings.Proxy}
-			for i, l := 0, len(settings); i < l; i++ {
-				mdbuilder(settings[i], "", "")
-			}
-
-			mdbuilder(settingsVar.ModifiedSrc != "", settingsVar.ModifiedSrc, "")
-
-			mdstr.WriteString(settingsVar.Country)
-			mdstr.WriteString("|")
-
-			try(func() error { _, err := instancesFile.Write(mdstr.Bytes()); return err }())
-			break
-		}
+	for string(instances) == "" {
+		print("\rDownloading instance list...")
 		time.Sleep(500 * time.Millisecond)
 	}
+	println("\r\033[2KDownloaded!")
+	try(json.Unmarshal(instances, &settingsVar))
+
+	settingsVar.Instances = append(settingsVar.Instances, promptInstance())
+
+	j, err := json.MarshalIndent(&settingsVar, "", "    ")
+	try(err)
+
+	try(func() error { _, err := instancesJSON.Write(j); return err }())
+
+	row := instanceMarkdownRow(&settingsVar.Instances[len(settingsVar.Instances)-1])
+	try(func() error { _, err := instancesFile.Write(row); return err }())
+
 	exit("Done! Now add the files 'instances.json' and 'INSTANCES.md' to the 'main' branch by merge request to https://gitbay.org/krz/skunky-art", 0)
 }

@@ -22,6 +22,12 @@ var (
 		g := devianter.Group{Name: name}
 		return g.Get()
 	}
+	fetchGallery = func(g devianter.Group, page, folderid int) (devianter.Group, devianter.Error, error) {
+		return g.Gallery(page, folderid)
+	}
+	fetchFavourites = func(g devianter.Group, page int, all bool, folderid int) (devianter.Group, devianter.Error) {
+		return g.Favourites(page, all, folderid)
+	}
 )
 
 // groupSearchURL is the DeviantArt group search page for query, paged ten
@@ -88,43 +94,11 @@ func (s skunkyart) GRUser() {
 
 	switch s.Type {
 	case 'a':
-		g := group.GR
 		s.Atom = false
-		for _, x := range g.Gruser.Page.Modules {
+		for _, x := range group.GR.Gruser.Page.Modules {
 			switch x.Name {
 			case "about", "group_about":
-				if g.Owner.Group {
-					var about = &x.ModuleData.GroupAbout
-					group.Group = true
-					group.CreationDate = x.ModuleData.GroupAbout.FoundatedAt.UTC().String()
-					group.About.DescriptionFormatted = template.HTML(ParseDescription(s.Host, about.Description)) //nolint:gosec // G203: ParseDescription escapes its input
-				} else {
-					group.About.A = x.ModuleData.About
-					var about = &group.About.A
-					group.CreationDate = time.Unix(time.Now().Unix()-x.ModuleData.About.RegDate, 0).UTC().String()
-					group.About.DescriptionFormatted = template.HTML(ParseDescription(s.Host, about.Description)) //nolint:gosec // G203: ParseDescription escapes its input
-
-					for _, val := range x.ModuleData.About.SocialLinks {
-						var social strings.Builder
-						social.WriteString(`<a target="_blank" href="`)
-						social.WriteString(esc(val.Value))
-						social.WriteString(`">`)
-						social.WriteString(esc(val.Value))
-						social.WriteString("</a><br>")
-						group.About.Social += template.HTML(social.String()) //nolint:gosec // G203: escaped above
-					}
-
-					for _, val := range x.ModuleData.About.Interests {
-						var interest strings.Builder
-						interest.WriteString(esc(val.Label))
-						interest.WriteString(": <b>")
-						interest.WriteString(esc(val.Value))
-						interest.WriteString("</b><br>")
-						group.About.Interests += template.HTML(interest.String()) //nolint:gosec // G203: escaped above
-					}
-				}
-				group.About.Comments = s.commentsOrLink(strconv.Itoa(group.GR.Gruser.ID), "", 4, -1)
-
+				s.fillAbout(group, x.ModuleData.GroupAbout, x.ModuleData.About)
 			case "cover_deviation":
 				group.About.BGMeta = x.ModuleData.CoverDeviation.Deviation
 				group.About.BGMeta.Url = ConvertDeviantArtURLToSkunkyArt(s.Host, group.About.BGMeta.Url)
@@ -136,86 +110,13 @@ func (s skunkyart) GRUser() {
 				}
 				group.Admins += template.HTML(htm.String()) //nolint:gosec // G203: BuildUserPlate escapes its input
 			}
-
 		}
 	case 'g', 'f':
-		var all bool
-		var content devianter.Group
-
-		folderid, _ := strconv.Atoi(s.Args.Get("folder"))
-
-		if s.Args.Get("all") == "true" {
-			all = true
-		}
-
 		if s.Page == 0 {
 			s.Page++
 		}
-
-		if s.Type == 'f' {
-			content, daError = g.Favourites(s.Page, all, folderid)
-		} else {
-			content, daError, err = g.Gallery(s.Page, folderid)
-			try(err)
-		}
-
-		if daError.RAW != nil {
-			s.Error(daError)
+		if !s.fillGallery(group, g) {
 			return
-		}
-
-		if folderid > 0 || (s.Type == 'f' && all) {
-			group.Gallery.List = template.HTML(s.DeviationList(content.Content.Results, true, DeviationList{ //nolint:gosec // G203: DeviationList escapes its input
-				More: content.Content.HasMore,
-			}))
-		} else {
-			for _, x := range content.Content.Gruser.Page.Modules {
-				if len(x.ModuleData.Folders.Results) != 0 {
-					var folders strings.Builder
-					folders.WriteString(`<h1 id="folders"><a href="#folders">#</a> ` + esc(T(s.Lang, "gallery.folders")) + `</h1><div class="folders"><br>`)
-					for _, x := range x.ModuleData.Folders.Results {
-						if x.FolderId != -1 && x.Size != 0 {
-							folders.WriteString(`<div class="block folder-item">`)
-
-							if !x.Thumb.NSFW || CFG.Nsfw {
-								folders.WriteString(`<a href="`)
-								folders.WriteString(esc(ConvertDeviantArtURLToSkunkyArt(s.Host, x.Thumb.Url)))
-								folders.WriteString(`"><img loading="lazy" src="`)
-								folders.WriteString(esc(ParseMedia(s.Host, x.Thumb.Media)))
-								folders.WriteString(`" title="`)
-								folders.WriteString(esc(x.Thumb.Title))
-								folders.WriteString(`" alt="`)
-								folders.WriteString(esc(x.Thumb.Title))
-								folders.WriteString(`"></a>`)
-							} else {
-								folders.WriteString(`<h1>[ <span class="nsfw">NSFW</span> ]</h1>`)
-							}
-							folders.WriteString("<br>")
-
-							folders.WriteString(`<a href="group_user?folder=`)
-							folders.WriteString(strconv.Itoa(x.FolderId))
-							folders.WriteString("&q=")
-							folders.WriteString(esc(s.Query))
-							folders.WriteString("&type=")
-							folders.WriteRune(s.Type)
-							folders.WriteString(`">`)
-							folders.WriteString(esc(x.Name))
-							folders.WriteString(`</a>`)
-
-							folders.WriteString("</div>")
-						}
-					}
-					folders.WriteString(`</div><h1 id="content"><a href="#content">#</a> ` + esc(T(s.Lang, "gallery.content")) + `</h1>`)
-					group.Gallery.Folders = template.HTML(folders.String()) //nolint:gosec // G203: escaped above
-				}
-
-				if x.Name == "folder_deviations" {
-					group.Gallery.List = template.HTML(s.DeviationList(x.ModuleData.Folder.Deviations, true, DeviationList{ //nolint:gosec // G203: DeviationList escapes its input
-						Pages: x.ModuleData.Folder.Pages,
-						More:  x.ModuleData.Folder.HasMore,
-					}))
-				}
-			}
 		}
 	default:
 		s.ReturnHTTPError(400)
@@ -224,6 +125,172 @@ func (s skunkyart) GRUser() {
 	if !s.Atom {
 		s.ExecuteTemplate("gruser.htm", "html", &s)
 	}
+}
+
+// fillAbout fills the about tab from a group's or a user's about module.
+func (s skunkyart) fillAbout(group *groupUserPage, groupAbout devianter.GroupAbout, about devianter.About) {
+	if group.GR.Owner.Group {
+		group.Group = true
+		group.CreationDate = groupAbout.FoundatedAt.UTC().String()
+		group.About.DescriptionFormatted = template.HTML(ParseDescription(s.Host, groupAbout.Description)) //nolint:gosec // G203: ParseDescription escapes its input
+	} else {
+		group.About.A = about
+		group.CreationDate = time.Unix(time.Now().Unix()-about.RegDate, 0).UTC().String()
+		group.About.DescriptionFormatted = template.HTML(ParseDescription(s.Host, about.Description)) //nolint:gosec // G203: ParseDescription escapes its input
+		group.About.Social += profileLinks(about)
+		group.About.Interests += profileInterests(about)
+	}
+	group.About.Comments = s.commentsOrLink(strconv.Itoa(group.GR.Gruser.ID), "", 4, -1)
+}
+
+func profileLinks(about devianter.About) template.HTML {
+	var out template.HTML
+	for _, val := range about.SocialLinks {
+		var social strings.Builder
+		social.WriteString(`<a target="_blank" href="`)
+		social.WriteString(esc(val.Value))
+		social.WriteString(`">`)
+		social.WriteString(esc(val.Value))
+		social.WriteString("</a><br>")
+		out += template.HTML(social.String()) //nolint:gosec // G203: escaped above
+	}
+	return out
+}
+
+func profileInterests(about devianter.About) template.HTML {
+	var out template.HTML
+	for _, val := range about.Interests {
+		var interest strings.Builder
+		interest.WriteString(esc(val.Label))
+		interest.WriteString(": <b>")
+		interest.WriteString(esc(val.Value))
+		interest.WriteString("</b><br>")
+		out += template.HTML(interest.String()) //nolint:gosec // G203: escaped above
+	}
+	return out
+}
+
+// fillGallery fills the gallery or favourites tab. It returns false when
+// DeviantArt answered with an error, which has already been rendered.
+func (s skunkyart) fillGallery(group *groupUserPage, g devianter.Group) bool {
+	var err error
+	var daError devianter.Error
+	var content devianter.Group
+	folderid, _ := strconv.Atoi(s.Args.Get("folder"))
+	all := s.Args.Get("all") == "true"
+
+	if s.Type == 'f' {
+		content, daError = fetchFavourites(g, s.Page, all, folderid)
+	} else {
+		content, daError, err = fetchGallery(g, s.Page, folderid)
+		try(err)
+	}
+
+	if daError.RAW != nil {
+		s.Error(daError)
+		return false
+	}
+
+	if folderid > 0 || (s.Type == 'f' && all) {
+		group.Gallery.List = template.HTML(s.DeviationList(content.Content.Results, true, DeviationList{ //nolint:gosec // G203: DeviationList escapes its input
+			More: content.Content.HasMore,
+		}))
+		return true
+	}
+	for _, x := range content.Content.Gruser.Page.Modules {
+		if len(x.ModuleData.Folders.Results) != 0 {
+			group.Gallery.Folders = s.folderGrid(x.ModuleData.Folders.Results)
+		}
+		if x.Name == "folder_deviations" {
+			group.Gallery.List = template.HTML(s.DeviationList(x.ModuleData.Folder.Deviations, true, DeviationList{ //nolint:gosec // G203: DeviationList escapes its input
+				Pages: x.ModuleData.Folder.Pages,
+				More:  x.ModuleData.Folder.HasMore,
+			}))
+		}
+	}
+	return true
+}
+
+// galleryFolder is one entry of a gallery's folder list, as devianter decodes it.
+type galleryFolder = struct {
+	Deviations int `json:"totalItemCount"`
+	FolderId   int //nolint:staticcheck // ST1003: must match devianter's field for the types to be identical
+	Size       int
+	Name       string
+	Thumb      devianter.Deviation
+}
+
+// folderGrid renders the non-empty folders of a gallery as thumbnail links.
+func (s skunkyart) folderGrid(results []galleryFolder) template.HTML {
+	var folders strings.Builder
+	folders.WriteString(`<h1 id="folders"><a href="#folders">#</a> ` + esc(T(s.Lang, "gallery.folders")) + `</h1><div class="folders"><br>`)
+	for _, x := range results {
+		if x.FolderId == -1 || x.Size == 0 {
+			continue
+		}
+		folders.WriteString(`<div class="block folder-item">`)
+		if !x.Thumb.NSFW || CFG.Nsfw {
+			folders.WriteString(`<a href="`)
+			folders.WriteString(esc(ConvertDeviantArtURLToSkunkyArt(s.Host, x.Thumb.Url)))
+			folders.WriteString(`"><img loading="lazy" src="`)
+			folders.WriteString(esc(ParseMedia(s.Host, x.Thumb.Media)))
+			folders.WriteString(`" title="`)
+			folders.WriteString(esc(x.Thumb.Title))
+			folders.WriteString(`" alt="`)
+			folders.WriteString(esc(x.Thumb.Title))
+			folders.WriteString(`"></a>`)
+		} else {
+			folders.WriteString(`<h1>[ <span class="nsfw">NSFW</span> ]</h1>`)
+		}
+		folders.WriteString("<br>")
+
+		folders.WriteString(`<a href="group_user?folder=`)
+		folders.WriteString(strconv.Itoa(x.FolderId))
+		folders.WriteString("&q=")
+		folders.WriteString(esc(s.Query))
+		folders.WriteString("&type=")
+		folders.WriteRune(s.Type)
+		folders.WriteString(`">`)
+		folders.WriteString(esc(x.Name))
+		folders.WriteString(`</a>`)
+
+		folders.WriteString("</div>")
+	}
+	folders.WriteString(`</div><h1 id="content"><a href="#content">#</a> ` + esc(T(s.Lang, "gallery.content")) + `</h1>`)
+	return template.HTML(folders.String()) //nolint:gosec // G203: escaped above
+}
+
+// groupSearchUsernames scrapes the group names from DeviantArt's group search page.
+func groupSearchUsernames(body []byte) []string {
+	var usernames []string
+	for z := html.NewTokenizer(strings.NewReader(string(body))); ; {
+		n, token := z.Next(), z.Token()
+		if n == html.ErrorToken {
+			return usernames
+		}
+		if n != html.StartTagToken || token.Data != "a" {
+			continue
+		}
+		for _, x := range token.Attr {
+			if x.Key == "class" && x.Val == "u regular username" {
+				usernames = append(usernames, GetValueOfTag(z))
+			}
+		}
+	}
+}
+
+// groupPlates renders scraped group names as user plates with page navigation.
+func (s skunkyart) groupPlates(usernames []string) template.HTML {
+	var plates strings.Builder
+	plates.WriteString(`<div class="content plates">`)
+	for _, name := range usernames {
+		plates.WriteString(BuildUserPlate(s.Host, name))
+	}
+	plates.WriteString(`</div>`)
+	plates.WriteString(s.NavBase(DeviationList{
+		More: true,
+	}))
+	return template.HTML(plates.String()) //nolint:gosec // G203: BuildUserPlate escapes its input
 }
 
 // Deviation renders a single artwork page, with its description, tags, comments
@@ -335,39 +402,9 @@ func (s skunkyart) Search() {
 	case 'g', 'f':
 		ss.Content, daError, err = devianter.PerformSearch(s.Query, s.Page, s.Type, s.Args.Get("usr"))
 	case 'r': // scraper, since DeviantArt withholds the guest API for group search
-		var (
-			usernames = make(map[int]string)
-			num       int
-		)
-
 		dwnld := Download(groupSearchURL(s.Query, s.Page))
-
-		for z := html.NewTokenizer(strings.NewReader(string(dwnld.Body))); ; {
-			if n, token := z.Next(), z.Token(); n == html.StartTagToken && token.Data == "a" {
-				for _, x := range token.Attr {
-					if x.Key == "class" && x.Val == "u regular username" {
-						usernames[num] = GetValueOfTag(z)
-						num++
-					}
-				}
-			} else if n == 0 {
-				break
-			} else {
-				continue
-			}
-		}
-
-		if len(usernames) != 0 {
-			var plates strings.Builder
-			plates.WriteString(`<div class="content plates">`)
-			for x := range len(usernames) {
-				plates.WriteString(BuildUserPlate(s.Host, usernames[x]))
-			}
-			plates.WriteString(`</div>`)
-			plates.WriteString(s.NavBase(DeviationList{
-				More: true,
-			}))
-			ss.List = template.HTML(plates.String()) //nolint:gosec // G203: BuildUserPlate escapes its input
+		if usernames := groupSearchUsernames(dwnld.Body); len(usernames) != 0 {
+			ss.List = s.groupPlates(usernames)
 		}
 	default:
 		s.ReturnHTTPError(400)

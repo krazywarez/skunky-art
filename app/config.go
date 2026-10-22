@@ -167,46 +167,13 @@ var cfgExplicit bool
 // a config that cannot be parsed, that asks for caching without proxying, or
 // that points caching at a directory this process cannot write.
 func ExecuteConfig() {
-	f, err := os.ReadFile(CFG.cfg)
-	switch {
-	case err == nil:
-		tryWithExitStatus(json.Unmarshal(f, &CFG), 1)
-	case os.IsNotExist(err) && !cfgExplicit:
-		// The default file is optional: the built-in defaults are a working
-		// instance. A path given with -c is not, since a typo there would
-		// otherwise start something the operator did not configure.
-		println("no", CFG.cfg, "found; running with the built-in defaults")
-	default:
-		tryWithExitStatus(err, 1)
-	}
+	readConfigFile()
 
 	if CFG.Cache.Enabled && !CFG.Proxy {
 		exit("Incompatible settings detected: cannot use caching media content without proxy", 1)
 	}
-
 	if CFG.Cache.Enabled {
-		if err := checkCacheWritable(CFG.Cache.Path); err != nil {
-			exit("Cache directory is not writable by this process (uid "+
-				strconv.Itoa(os.Getuid())+"): "+err.Error()+
-				"\nGrant that uid write access to the directory, or set cache.enabled to false."+
-				"\nThe official container image runs as uid 10000, so a bind-mounted cache needs:"+
-				"\n  chown -R 10000:10000 <cache dir on the host>", 1)
-		}
-
-		if CFG.Cache.Lifetime != "" {
-			d, err := parseLifetime(CFG.Cache.Lifetime)
-			if err != nil {
-				exit("config: cache.lifetime: "+err.Error(), 1)
-			}
-			lifetimeParsed = d.Milliseconds()
-		}
-		// max-size is documented in megabytes. This was 1024^2, which in Go is
-		// XOR (1026), not exponentiation — so the cap was ~1000x too small.
-		CFG.Cache.MaxSize *= 1024 * 1024
-		go InitCacheSystem()
-		if CFG.Cache.MemCache {
-			go InitMemCacheJanitor()
-		}
+		setupMediaCache()
 	}
 
 	About = instanceAbout{
@@ -225,18 +192,7 @@ func ExecuteConfig() {
 	}
 
 	if CFG.APICache.Enabled {
-		d, err := parseLifetime(CFG.APICache.TTL)
-		if err != nil {
-			exit("config: api-cache.ttl: "+err.Error(), 1)
-		}
-		apiCacheTTL = d
-		if CFG.APICache.Stale != "" {
-			d, err := parseLifetime(CFG.APICache.Stale)
-			if err != nil {
-				exit("config: api-cache.stale: "+err.Error(), 1)
-			}
-			apiCacheStale = d
-		}
+		setupAPICache()
 	}
 
 	// per-minute 0 turns the limit off; a burst below one token would
@@ -252,6 +208,61 @@ func ExecuteConfig() {
 
 	static.StaticPath = CFG.StaticPath
 	devianter.UserAgent = CFG.UserAgent
+}
+
+func readConfigFile() {
+	f, err := os.ReadFile(CFG.cfg)
+	switch {
+	case err == nil:
+		tryWithExitStatus(json.Unmarshal(f, &CFG), 1)
+	case os.IsNotExist(err) && !cfgExplicit:
+		// The default file is optional: the built-in defaults are a working
+		// instance. A path given with -c is not, since a typo there would
+		// otherwise start something the operator did not configure.
+		println("no", CFG.cfg, "found; running with the built-in defaults")
+	default:
+		tryWithExitStatus(err, 1)
+	}
+}
+
+func setupMediaCache() {
+	if err := checkCacheWritable(CFG.Cache.Path); err != nil {
+		exit("Cache directory is not writable by this process (uid "+
+			strconv.Itoa(os.Getuid())+"): "+err.Error()+
+			"\nGrant that uid write access to the directory, or set cache.enabled to false."+
+			"\nThe official container image runs as uid 10000, so a bind-mounted cache needs:"+
+			"\n  chown -R 10000:10000 <cache dir on the host>", 1)
+	}
+
+	if CFG.Cache.Lifetime != "" {
+		d, err := parseLifetime(CFG.Cache.Lifetime)
+		if err != nil {
+			exit("config: cache.lifetime: "+err.Error(), 1)
+		}
+		lifetimeParsed = d.Milliseconds()
+	}
+	// max-size is documented in megabytes. This was 1024^2, which in Go is
+	// XOR (1026), not exponentiation — so the cap was ~1000x too small.
+	CFG.Cache.MaxSize *= 1024 * 1024
+	go InitCacheSystem()
+	if CFG.Cache.MemCache {
+		go InitMemCacheJanitor()
+	}
+}
+
+func setupAPICache() {
+	d, err := parseLifetime(CFG.APICache.TTL)
+	if err != nil {
+		exit("config: api-cache.ttl: "+err.Error(), 1)
+	}
+	apiCacheTTL = d
+	if CFG.APICache.Stale != "" {
+		d, err := parseLifetime(CFG.APICache.Stale)
+		if err != nil {
+			exit("config: api-cache.stale: "+err.Error(), 1)
+		}
+		apiCacheStale = d
+	}
 }
 
 // forcedThemeCSS returns a block that pins the palette when the instance has

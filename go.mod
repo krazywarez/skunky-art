@@ -1,6 +1,6 @@
 module skunkyart
 
-go 1.26.0
+go 1.26.10
 
 require (
 	github.com/krazywarez/devianter v0.3.4

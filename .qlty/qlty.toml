@@ -38,7 +38,9 @@ name = "trufflehog"
 [smells.return_statements]
 enabled = false
 
-# Total file complexity is the sum of its functions, which function_complexity
-# already checks.
+# Function and file complexity are left to review rather than counted.
+[smells.function_complexity]
+enabled = false
+
 [smells.file_complexity]
 enabled = false

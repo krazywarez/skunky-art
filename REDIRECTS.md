@@ -7,6 +7,12 @@
 # Groups and users
 ## Main user page
 * (`$USER_GROUP.deviantart.com`|`deviantart.com/$USER_GROUP`) => `/group_user?type=about&q=$USER_GROUP`
+## Gallery folder
+Match before the plain gallery rule. `$FOLDER_ID` is numeric; the trailing `$SLUG` is optional and ignored.
+* (`$USER_GROUP.deviantart.com/gallery/$FOLDER_ID[/$SLUG]`|`deviantart.com/$USER_GROUP/gallery/$FOLDER_ID[/$SLUG]`) => `/group_user?type=gallery&q=$USER_GROUP&folder=$FOLDER_ID`
+## Favourites folder
+Match before the plain favourites rule. `$FOLDER_ID` is numeric; the trailing `$SLUG` is optional and ignored.
+* (`$USER_GROUP.deviantart.com/favourites/$FOLDER_ID[/$SLUG]`|`deviantart.com/$USER_GROUP/favourites/$FOLDER_ID[/$SLUG]`) => `/group_user?type=favourites&q=$USER_GROUP&folder=$FOLDER_ID`
 ## Gallery
 * (`$USER_GROUP.deviantart.com/gallery`|`deviantart.com/$USER_GROUP/gallery`) => `/group_user?type=gallery&q=$USER_GROUP`
 ## Favourites

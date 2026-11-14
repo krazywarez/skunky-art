@@ -1,5 +1,7 @@
 #+title: skunkyart
 
+support this project through [[https://github.com/sponsors/ccleberg][github sponsors]].
+
 * fork
 fork of SkunkyArt (https://git.macaw.me/skunky/SkunkyArt). upstream hasn't
 updated in over a year, has open bugs, and its listed instances are dead links.
